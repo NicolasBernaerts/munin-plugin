@@ -1,0 +1,223 @@
+#!/bin/bash
+# -------------------------------------------------------
+#  Munin node script
+#
+#  Monitor network interface
+#  Uses area graph with send & receive on the same scale
+#  Handles ETHERNET & ADSL interface types
+#  For ETHERNET type labels are sent & received
+#  For ADSL directions are inverted and labels are download & upload
+#
+#  Used in http://bernaerts.dyndns.org/linux/...
+#
+#  Parameters : 
+#    $1 : none, "snmpconf" or "config"
+#
+#  24/06/2014, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+# -*- sh -*-
+
+: << =cut
+
+=head1 NAME
+
+snmp__ethernet_ - Munin plugin to monitor the toner level of HP Printers
+
+=head1 APPLICABLE SYSTEMS
+
+Any SNMP-capable network device
+
+=head1 CONFIGURATION
+
+No specific configuration needed.
+This plugin uses public community.
+If you want to monitor an ADSL interface, replace _ethernet_ by _adsl_ in the plugin link
+
+=head1 INTERPRETATION
+
+Network data rate in bits/second
+
+=head1 MIB INFORMATION
+
+This plugin requires support for the network interface MIBs.
+
+=head1 MAGIC MARKERS
+
+  #%# family=snmpauto
+  #%# capabilities=snmpconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2014 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+TMP_DIR="/tmp"
+
+# -------------------------------------------------------
+#  Get interface specs
+# -------------------------------------------------------
+
+# get device data from script name
+NETWORK_IP=`basename $0 | cut -d'_' -f2`
+NETWORK_TYPE=`basename $0 | cut -d'_' -f3`
+NETWORK_IF=`basename $0 | cut -d'_' -f4`
+
+# define temporary file to store data
+IF_FILE=$TMP_DIR/munin-$NETWORK_IP-$NETWORK_TYPE-$NETWORK_IF.values
+
+# -------------------------------------------------------
+#  Configure all MIBs adresses
+# -------------------------------------------------------
+
+MIB_IF_NAME="1.3.6.1.2.1.2.2.1.2.$NETWORK_IF"
+MIB_IF_STATUS="1.3.6.1.2.1.2.2.1.8.$NETWORK_IF"
+[ "$NETWORK_TYPE" = "ethernet" ] && MIB_IF_RECV="1.3.6.1.2.1.2.2.1.10.$NETWORK_IF" || MIB_IF_RECV="1.3.6.1.2.1.2.2.1.16.$NETWORK_IF"
+[ "$NETWORK_TYPE" = "ethernet" ] && MIB_IF_SEND="1.3.6.1.2.1.2.2.1.16.$NETWORK_IF" || MIB_IF_SEND="1.3.6.1.2.1.2.2.1.10.$NETWORK_IF"
+
+# -------------------------------------------------------
+#  Read all MIBs data from the printer
+# -------------------------------------------------------
+
+# get current date (in seconds)
+IF_DATE=`date +%s`
+
+# if not in autoconf process, read SNMP data
+if [ "$1" != "snmpconf" ]; then 
+  # read SNMP MIB
+  MIB_RESULT=`snmpget -v1 -One -c public $NETWORK_IP $MIB_IF_NAME $MIB_IF_STATUS $MIB_IF_RECV $MIB_IF_SEND`
+
+  # get all needed data from SNMP MIB
+  IF_NAME=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_NAME'[^"]*"\([^"]*\).*/\1/g'`
+  IF_STATUS=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_STATUS'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g'`
+  IF_RECV=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_RECV'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g'`
+  IF_SEND=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_SEND'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g'`
+fi
+
+# -------------------------------------------------------
+#  Handle SNMP autoconf call
+# -------------------------------------------------------
+
+# snmpconf : announce required MIBs
+if [ "$1" = "snmpconf" ]; then
+  echo "index   1.3.6.1.2.1.2.2.1.1."
+  echo "require 1.3.6.1.2.1.2.2.1.8. [1-9]"
+  echo "require 1.3.6.1.2.1.2.2.1.10. [1-9]"
+  echo "require 1.3.6.1.2.1.2.2.1.16. [1-9]"
+
+# -------------------------------------------------------
+#  Handle configuration call
+# -------------------------------------------------------
+
+# config : read node configuration
+elif [ "$1" = "config" ]; then
+  # prepare label if interface down
+  [ "$IF_STATUS" = "2" ] && IF_EXTRA="(currently down)" || IF_EXTRA=""
+
+  # node general infos
+  echo "host_name $NETWORK_IP"
+  echo "graph_group $NETWORK_IP"
+  echo "graph_title Interface $IF_NAME traffic"
+  echo "graph_info This graph shows traffic for the $IF_NAME network interface $IF_EXTRA"
+  echo "graph_vlabel bits per second"
+  echo "graph_category network"
+  echo "graph_args --base 1000"
+  echo "graph_order recvlow send recv"
+  echo "recvlow.label ---"
+  echo "recvlow.draw AREA"
+  echo "recvlow.colour 0000ff"
+  echo "recvlow.min 0"
+  echo "recvlow.cdef recvlow,8,*"
+  [ "$NETWORK_TYPE" = "ethernet" ] && echo "send.label sent" || echo "send.label uploaded"
+  echo "send.info Bits sent by this interface."
+  echo "send.draw STACK"
+  echo "send.colour 00ff00"
+  echo "send.min 0"
+  echo "send.cdef send,8,*"
+  [ "$NETWORK_TYPE" = "ethernet" ] && echo "recv.label received" || echo "recv.label downloaded"
+  echo "recv.info Bits received by this interface."
+  echo "recv.draw STACK"
+  echo "recv.colour 0000ff"
+  echo "recv.min 0"
+  echo "recv.cdef recv,8,*"
+
+# -------------------------------------------------------
+#  Handle normal call with interface down
+# -------------------------------------------------------
+
+# normal case : interface is down
+elif [ "$IF_STATUS" = "2" ]; then
+  # remove previous data file
+  rm "$IF_FILE"
+
+  # declare send and recv as unavailable
+  echo "recvlow.value U" 
+  echo "send.value U" 
+  echo "recv.value U"
+
+# -------------------------------------------------------
+#  Handle normal call with interface up
+# -------------------------------------------------------
+
+# normal case : interface is up
+else
+  # if previous values not available
+  if [ ! -e "$IF_FILE" ]; then
+    # declare send and recv as unavailable
+    echo "recvlow.value U" 
+    echo "send.value U" 
+    echo "recv.value U" 
+
+  # else data rate can be computed
+  else
+    # read previous data
+    PREV_DATE=`cat $IF_FILE | grep "Date" | cut -d':' -f2`
+    PREV_SEND=`cat $IF_FILE | grep "Send" | cut -d':' -f2`
+    PREV_RECV=`cat $IF_FILE | grep "Recv" | cut -d':' -f2`
+
+    # calculate data increase
+    DELTA_DATE=$((IF_DATE - PREV_DATE))
+    [ "$IF_SEND" -gt "$PREV_SEND" ] && DELTA_SEND=$((IF_SEND - PREV_SEND)) || DELTA_SEND=$((2**32 - PREV_SEND + IF_SEND))
+    [ "$IF_RECV" -gt "$PREV_RECV" ] && DELTA_RECV=$((IF_RECV - PREV_RECV)) || DELTA_RECV=$((2**32 - PREV_RECV + IF_RECV))
+
+    # calculate data rate
+    RATE_SEND=$((DELTA_SEND / DELTA_DATE))
+    RATE_RECV=$((DELTA_RECV / DELTA_DATE))
+
+    # if interval is less than 5 seconds, no calculation possible
+    if [ "$DELTA_DATE" -lt "5" ]; then 
+      echo "recvlow.value U" 
+      echo "send.value U" 
+      echo "recv.value U" 
+    # else, if download rate is greater than upload rate
+    elif [ "$RATE_RECV" -gt "$RATE_SEND" ]; then 
+      echo "recvlow.value 0" 
+      echo "send.value $RATE_SEND" 
+      echo "recv.value $((RATE_RECV - RATE_SEND))" 
+    # else, if upload rate is greater than download rate
+    else
+      echo "recvlow.value $RATE_RECV" 
+      echo "send.value $((RATE_SEND - RATE_RECV))" 
+      echo "recv.value 0" 
+    fi
+  fi
+
+  # save actual data values
+  echo "Date:$IF_DATE" > $IF_FILE
+  echo "Send:$IF_SEND" >> $IF_FILE
+  echo "Recv:$IF_RECV" >> $IF_FILE
+fi
+
+exit 0
