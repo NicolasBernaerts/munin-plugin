@@ -64,7 +64,16 @@ GPLv2.
 
 =cut
 
+# -------------------------------------------------------
+#  User defined variables
+# -------------------------------------------------------
+
+# temporary directory to store last probe results
 TMP_DIR="/tmp"
+
+# send and receive graph colors (RGB hex format)
+SEND_COLOR="ff00ff"
+RECV_COLOR="0000ff"
 
 # -------------------------------------------------------
 #  Get interface specs
@@ -137,19 +146,19 @@ elif [ "$1" = "config" ]; then
   echo "graph_order recvlow send recv"
   echo "recvlow.label ---"
   echo "recvlow.draw AREA"
-  echo "recvlow.colour 0000ff"
+  echo "recvlow.colour $RECV_COLOR"
   echo "recvlow.min 0"
   echo "recvlow.cdef recvlow,8,*"
   [ "$NETWORK_TYPE" = "ethernet" ] && echo "send.label sent" || echo "send.label uploaded"
   echo "send.info Bits sent by this interface."
   echo "send.draw STACK"
-  echo "send.colour 00ff00"
+  echo "send.colour $SEND_COLOR"
   echo "send.min 0"
   echo "send.cdef send,8,*"
   [ "$NETWORK_TYPE" = "ethernet" ] && echo "recv.label received" || echo "recv.label downloaded"
   echo "recv.info Bits received by this interface."
   echo "recv.draw STACK"
-  echo "recv.colour 0000ff"
+  echo "recv.colour $RECV_COLOR"
   echo "recv.min 0"
   echo "recv.cdef recv,8,*"
 

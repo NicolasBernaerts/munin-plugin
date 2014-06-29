@@ -1,0 +1,149 @@
+#!/bin/sh
+# -------------------------------------------------------
+#  Munin node script
+#
+#  Monitor the internal temperature of a DNS-325 NAS
+#  Retrieves temperature of case, hdd1 and hdd2
+#
+#  Used in http://bernaerts.dyndns.org/linux/...
+#
+#  Parameters : 
+#    $1 : none, "snmpconf" or "config"
+#
+#  28/06/2014, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+# -*- sh -*-
+
+: << =cut
+
+=head1 NAME
+
+snmp__dns325temperature - Munin plugin to monitor the internal temperature of a DNS-325 NAS
+
+=head1 APPLICABLE SYSTEMS
+
+Any DNS-325 with funplug installed and Net-SNMP installed and configured
+
+=head1 CONFIGURATION
+
+DNS-325 must have funplug installed and Net-SNMP installed and configured.
+This plugin uses public community.
+
+=head1 INTERPRETATION
+
+The temperature in degree celsius of case, hdd1 and hdd2
+
+=head1 MIB INFORMATION
+
+This plugin requires support for extended snmp-temperature MIBs.
+
+=head1 MAGIC MARKERS
+
+  #%# family=snmpauto
+  #%# capabilities=snmpconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2014 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+# -------------------------------------------------------
+#  Configure all MIBs adresses
+# -------------------------------------------------------
+
+# extended MIB for DNS-325 temperature
+MIB_INTERNAL="1.3.6.1.4.1.8072.1.3.2.3.1.2.20.116.101.109.112.101.114.97.116.117.114.101.95.105.110.116.101.114.110.97.108"
+MIB_DISK1="1.3.6.1.4.1.8072.1.3.2.3.1.2.17.116.101.109.112.101.114.97.116.117.114.101.95.100.105.115.107.49"
+MIB_DISK2="1.3.6.1.4.1.8072.1.3.2.3.1.2.17.116.101.109.112.101.114.97.116.117.114.101.95.100.105.115.107.50"
+
+# -------------------------------------------------------
+#  Get DNS-325 address
+# -------------------------------------------------------
+
+# get nas name from script name
+DNS325_IP=`basename $0 | cut -d'_' -f2`
+
+# -------------------------------------------------------
+#  Read all MIBs data from the DNS-325
+# -------------------------------------------------------
+
+# if not in autoconf process, read SNMP data
+if [ "$1" != "snmpconf" ]; then 
+  # read SNMP MIB
+  MIB_RESULT=`snmpget -v1 -One -c public $DNS325_IP $MIB_INTERNAL $MIB_DISK1 $MIB_DISK2`
+
+  # get values from result
+  VALUE_INTERNAL=`echo $MIB_RESULT | sed 's/^.*'$MIB_INTERNAL'[ =:STRING]*"\([0-9]*\)".*$/\1/g'`
+  VALUE_DISK1=`echo $MIB_RESULT | sed 's/^.*'$MIB_DISK1'[ =:STRING]*"\([0-9]*\)".*$/\1/g'`
+  VALUE_DISK2=`echo $MIB_RESULT | sed 's/^.*'$MIB_DISK2'[ =:STRING]*"\([0-9]*\)".*$/\1/g'`
+fi
+
+# -------------------------------------------------------
+#  Handle SNMP autoconf call
+# -------------------------------------------------------
+
+# snmpconf : announce required MIBs
+if [ "$1" = "snmpconf" ]; then
+  echo "require $MIB_INTERNAL"
+  echo "require $MIB_DISK1"
+  echo "require $MIB_DISK2"
+
+# -------------------------------------------------------
+#  Handle configuration call
+# -------------------------------------------------------
+
+# config : read node configuration
+elif [ "$1" = "config" ]; then
+  # NAS general infos
+  echo "host_name $DNS325_IP"
+  echo "graph_title DNS-325 Temperature Levels"
+  echo "graph_vlabel Degree Celsius"
+  echo "graph_group $DNS325_IP"
+  echo "graph_category system"
+  echo "graph_info Temperature Levels"
+ # echo "graph_args --upper-limit 60 -l 0"
+
+  # internal temperature
+  echo "internal.info Temperature inside Case"
+  echo "internal.label Internal"
+  echo "internal.colour 00ff00"
+  echo "internal.min 0"
+
+  # disk1 temperature
+  echo "disk1.info Temperature of Disk 1"
+  echo "disk1.label Disk 1"
+  echo "disk1.colour ff0000"
+  echo "disk1.min 0"
+
+  # disk2 temperature
+  echo "disk2.info Temperature of Disk 2"
+  echo "disk2.label Disk 2"
+  echo "disk2.colour 0000ff"
+  echo "disk2.min 0"
+
+# -------------------------------------------------------
+#  Handle data read call
+# -------------------------------------------------------
+
+# normal case : read temperatures
+else
+  # publish temperature levels
+  echo "internal.value $VALUE_INTERNAL" 
+  echo "disk1.value $VALUE_DISK1" 
+  echo "disk2.value $VALUE_DISK2" 
+fi
+
+exit 0
