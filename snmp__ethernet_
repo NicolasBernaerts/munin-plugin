@@ -142,7 +142,7 @@ elif [ "$1" = "config" ]; then
   echo "graph_info This graph shows traffic for the $IF_NAME network interface $IF_EXTRA"
   echo "graph_vlabel bits per second"
   echo "graph_category network"
-  echo "graph_args --base 1000"
+  echo "graph_args --base 1000 --rigid"
   echo "graph_order recvlow send recv"
   echo "recvlow.label ---"
   echo "recvlow.draw AREA"
@@ -167,7 +167,7 @@ elif [ "$1" = "config" ]; then
 # -------------------------------------------------------
 
 # normal case : interface is down
-elif [ "$IF_STATUS" = "2" ]; then
+elif [ "$IF_STATUS" != "1" ]; then
   # remove previous data file
   rm "$IF_FILE"
 
