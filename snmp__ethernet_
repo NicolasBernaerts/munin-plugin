@@ -1,4 +1,5 @@
 #!/bin/bash
+# -*- sh -*-
 # -------------------------------------------------------
 #  Munin node script
 #
@@ -15,17 +16,16 @@
 #
 #  24/06/2014, V1.0 - Creation by N. Bernaerts
 # -------------------------------------------------------
-# -*- sh -*-
 
 : << =cut
 
 =head1 NAME
 
-snmp__ethernet_ - Munin plugin to monitor the toner level of HP Printers
+snmp__ethernet_ - Munin plugin to monitor the data usage of network interface
 
 =head1 APPLICABLE SYSTEMS
 
-Any SNMP-capable network device
+Any system with a network interface to monitor
 
 =head1 CONFIGURATION
 
@@ -137,7 +137,6 @@ elif [ "$1" = "config" ]; then
 
   # node general infos
   echo "host_name $NETWORK_IP"
-  echo "graph_group $NETWORK_IP"
   echo "graph_title Interface $IF_NAME traffic"
   echo "graph_info This graph shows traffic for the $IF_NAME network interface $IF_EXTRA"
   echo "graph_vlabel bits per second"

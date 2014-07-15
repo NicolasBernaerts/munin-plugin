@@ -1,4 +1,5 @@
 #!/bin/sh
+# -*- sh -*-
 # -------------------------------------------------------
 #  Munin node script
 #
@@ -14,7 +15,6 @@
 #  30/06/2014, V2.0 - Add fan speed status
 #  05/07/2014, V2.1 - Add hard disk information
 # -------------------------------------------------------
-# -*- sh -*-
 
 : << =cut
 
@@ -62,6 +62,11 @@ GPLv2.
 
 =cut
 
+# define display value for 3 fan states (stop, low & high)
+FAN_STOP="20"
+FAN_LOW="22"
+FAN_HIGH="24"
+
 # -------------------------------------------------------
 #  Configure all MIBs adresses
 # -------------------------------------------------------
@@ -91,7 +96,7 @@ if [ "$1" != "snmpconf" ]; then
   MIB_RESULT=`snmpget -v1 -One -c public $DNS325_IP $MIB_FAN $MIB_TEMP_CASE $MIB_TEMP_DISK1 $MIB_TEMP_DISK2 $MIB_INFO_DISK1 $MIB_INFO_DISK2`
 
   # get values from result
-  VALUE_FAN=`echo $MIB_RESULT | sed 's/^.*'$MIB_FAN'[ =:STRING]*"\([0-9]*\)".*$/\1/g'`
+  VALUE_FAN=`echo $MIB_RESULT | sed 's/^.*'$MIB_FAN'[ =:STRING]*"\([a-z]*\)".*$/\1/g'`
   VALUE_TEMP_CASE=`echo $MIB_RESULT | sed 's/^.*'$MIB_TEMP_CASE'[ =:STRING]*"\([0-9]*\)".*$/\1/g'`
   VALUE_TEMP_DISK1=`echo $MIB_RESULT | sed 's/^.*'$MIB_TEMP_DISK1'[" =:STRING]*\([0-9]*\)".*$/\1/g'`
   VALUE_TEMP_DISK2=`echo $MIB_RESULT | sed 's/^.*'$MIB_TEMP_DISK2'[" =:STRING]*\([0-9]*\)".*$/\1/g'`
@@ -120,10 +125,9 @@ elif [ "$1" = "config" ]; then
   echo "host_name $DNS325_IP"
   echo "graph_title DNS-325 Temperature Levels & Fan speed"
   echo "graph_vlabel Degree Celsius"
-  echo "graph_group $DNS325_IP"
-  echo "graph_category sensors"
+  echo "graph_category temperature"
   echo "graph_info Temperature Levels"
-  echo "graph_args --lower-limit 20 --rigid"
+  echo "graph_args --lower-limit $FAN_STOP --rigid"
 
   # fan speed
   echo "fan.info Fan speed"
@@ -153,7 +157,12 @@ elif [ "$1" = "config" ]; then
 # normal case : read temperatures
 else
   # publish fan speed
-  echo "fan.value $VALUE_FAN" 
+  case $VALUE_FAN in
+    stop) echo "fan.value $FAN_STOP" ;;
+    low) echo "fan.value $FAN_LOW" ;;
+    high) echo "fan.value $FAN_HIGH" ;;
+    *) echo "fan.value U" ;;
+  esac
 
   # publish temperature levels
   echo "internal.value $VALUE_TEMP_CASE" 

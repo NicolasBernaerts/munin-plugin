@@ -1,4 +1,5 @@
 #!/bin/sh
+# -*- sh -*-
 # -------------------------------------------------------
 #  Munin node script
 #
@@ -11,8 +12,8 @@
 #    $1 : none, "snmpconf" or "config"
 #
 #  20/06/2014, V1.0 - Creation by N. Bernaerts
+#  07/07/2014, V2.0 - Changed to multigraph
 # -------------------------------------------------------
-# -*- sh -*-
 
 : << =cut
 
@@ -67,12 +68,6 @@ GPLv2.
 # printer name
 MIB_NAME="1.3.6.1.2.1.1.6.0"
 
-# cartridge colors labels
-MIB_LABEL_BLACK="1.3.6.1.2.1.43.12.1.1.4.1.1"
-MIB_LABEL_CYAN="1.3.6.1.2.1.43.12.1.1.4.1.2"
-MIB_LABEL_MAGENTA="1.3.6.1.2.1.43.12.1.1.4.1.3"
-MIB_LABEL_YELLOW="1.3.6.1.2.1.43.12.1.1.4.1.4"
-
 # cartridge colors max level
 MIB_MAX_BLACK="1.3.6.1.2.1.43.11.1.1.8.1.1"
 MIB_MAX_CYAN="1.3.6.1.2.1.43.11.1.1.8.1.2"
@@ -99,14 +94,10 @@ PRINTER_IP=`basename $0 | cut -d'_' -f2`
 # if not in autoconf process, read SNMP data
 if [ "$1" != "snmpconf" ]; then 
   # read SNMP MIB
-  MIB_RESULT=`snmpget -v1 -One -c public $PRINTER_IP $MIB_NAME $MIB_MAX_BLACK $MIB_MAX_CYAN $MIB_MAX_MAGENTA $MIB_MAX_YELLOW $MIB_LABEL_BLACK $MIB_LABEL_CYAN $MIB_LABEL_MAGENTA $MIB_LABEL_YELLOW $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW`
+  MIB_RESULT=`snmpget -v1 -One -c public $PRINTER_IP $MIB_NAME $MIB_MAX_BLACK $MIB_MAX_CYAN $MIB_MAX_MAGENTA $MIB_MAX_YELLOW $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW`
 
   # get values from result
   PRINTER_NAME=`echo $MIB_RESULT | sed 's/.*'$MIB_NAME'[^"]*"\([^"]*\).*/\1/g'`
-  LABEL_BLACK=`echo $MIB_RESULT | sed 's/.*'$MIB_LABEL_BLACK'[^"]*"\([^"]*\).*/\1/g'`
-  LABEL_CYAN=`echo $MIB_RESULT | sed 's/.*'$MIB_LABEL_CYAN'[^"]*"\([^"]*\).*/\1/g'`
-  LABEL_MAGENTA=`echo $MIB_RESULT | sed 's/.*'$MIB_LABEL_MAGENTA'[^"]*"\([^"]*\).*/\1/g'`
-  LABEL_YELLOW=`echo $MIB_RESULT | sed 's/.*'$MIB_LABEL_YELLOW'[^"]*"\([^"]*\).*/\1/g'`
   MAX_BLACK=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g'`
   MAX_CYAN=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g'`
   MAX_MAGENTA=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g'`
@@ -123,6 +114,11 @@ fi
 
 # snmpconf : announce required MIBs
 if [ "$1" = "snmpconf" ]; then
+  echo "require $MIB_NAME"
+  echo "require $MIB_MAX_BLACK"
+  echo "require $MIB_MAX_CYAN"
+  echo "require $MIB_MAX_MAGENTA"
+  echo "require $MIB_MAX_YELLOW"
   echo "require $MIB_LEVEL_BLACK"
   echo "require $MIB_LEVEL_CYAN"
   echo "require $MIB_LEVEL_MAGENTA"
@@ -136,64 +132,82 @@ if [ "$1" = "snmpconf" ]; then
 elif [ "$1" = "config" ]; then
   # printer general infos
   echo "host_name $PRINTER_IP"
-  echo "graph_title $PRINTER_NAME Toner"
-  echo "graph_vlabel Toner Level"
-  echo "graph_group $PRINTER_IP"
-  echo "graph_category toner"
-  echo "graph_info Toner status"
-  echo "graph_args --upper-limit 400 -l 0"
 
   # black cartridge
-  echo "blackavailable.info Display the level in % of $LABEL_BLACK cartridge"
-  echo "blackavailable.label $LABEL_BLACK (available)"
-  echo "blackavailable.draw AREA"
-  echo "blackavailable.colour 000000"
-  echo "blackavailable.min 0"
-  echo "blackavailable.max 100"
-  echo "blackused.label $LABEL_BLACK (used)"
-  echo "blackused.draw STACK"
-  echo "blackused.colour e0e0e0"
-  echo "blackused.min 0"
-  echo "blackused.max 100"
+  echo "multigraph black"
+  echo "graph_title Black Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Black toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME<br/>Black toner level is $LEVEL_BLACK out of $MAX_BLACK"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour 000000"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour d0d0d0"
+  echo "used.min 0"
+  echo "used.max 100"
 
   # cyan cartridge
-  echo "cyanavailable.info Display the level in % of $LABEL_CYAN cartridge"
-  echo "cyanavailable.label $LABEL_CYAN (available)"
-  echo "cyanavailable.draw STACK"
-  echo "cyanavailable.colour 00ffff"
-  echo "cyanavailable.min 0"
-  echo "cyanavailable.max 100"
-  echo "cyanused.label $LABEL_CYAN (used)"
-  echo "cyanused.draw STACK"
-  echo "cyanused.colour e0ffff"
-  echo "cyanused.min 0"
-  echo "cyanused.max 100"
+  echo "multigraph cyan"
+  echo "graph_title Cyan Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Cyan toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME cyan toner level is $LEVEL_CYAN out of $MAX_CYAN"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour 00ffff"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour d0ffff"
+  echo "used.min 0"
+  echo "used.max 100"
 
   # magenta cartridge
-  echo "magentaavailable.info Display the level in % of $LABEL_MAGENTA cartridge"
-  echo "magentaavailable.label $LABEL_MAGENTA (available)"
-  echo "magentaavailable.draw STACK"
-  echo "magentaavailable.colour ff00ff"
-  echo "magentaavailable.min 0"
-  echo "magentaavailable.max 100"
-  echo "magentaused.label $LABEL_MAGENTA (used)"
-  echo "magentaused.draw STACK"
-  echo "magentaused.colour ffe0ff"
-  echo "magentaused.min 0"
-  echo "magentaused.max 100"
+  echo "multigraph magenta"
+  echo "graph_title Magenta Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Magenta toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME magenta toner level is $LEVEL_MAGENTA out of $MAX_MAGENTA"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour ff00ff"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour ffd0ff"
+  echo "used.min 0"
+  echo "used.max 100"
 
   # yellow cartridge
-  echo "yellowavailable.info Display the level in % of $LABEL_YELLOW cartridge"
-  echo "yellowavailable.label $LABEL_YELLOW (available)"
-  echo "yellowavailable.draw STACK"
-  echo "yellowavailable.colour ffff00"
-  echo "yellowavailable.min 0"
-  echo "yellowavailable.max 100"
-  echo "yellowused.label $LABEL_YELLOW (used)"
-  echo "yellowused.draw STACK"
-  echo "yellowused.colour ffffe0"
-  echo "yellowused.min 0"
-  echo "yellowused.max 100"
+  echo "multigraph yellow"
+  echo "graph_title Yellow Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Yellow toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME yellow toner level is $LEVEL_YELLOW out of $MAX_YELLOW"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour ffff00"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour ffffa0"
+  echo "used.min 0"
+  echo "used.max 100"
 
 # -------------------------------------------------------
 #  Handle data read call
@@ -201,25 +215,33 @@ elif [ "$1" = "config" ]; then
 
 # normal case : read cartridge levels
 else
-  # calculate percentage
+  # publish black level
   BLACK_AVAILABLE=$((100 * LEVEL_BLACK / MAX_BLACK))
   BLACK_USED=$((100 - BLACK_AVAILABLE))
+  echo "multigraph black"
+  echo "available.value $BLACK_AVAILABLE" 
+  echo "used.value $BLACK_USED" 
+
+  # publish cyan level
   CYAN_AVAILABLE=$((100 * LEVEL_CYAN / MAX_CYAN)) 
   CYAN_USED=$((100 - CYAN_AVAILABLE))
+  echo "multigraph cyan"
+  echo "available.value $CYAN_AVAILABLE" 
+  echo "used.value $CYAN_USED" 
+
+  # publish magenta level
   MAGENTA_AVAILABLE=$((100 * LEVEL_MAGENTA / MAX_MAGENTA)) 
   MAGENTA_USED=$((100 - MAGENTA_AVAILABLE))
+  echo "multigraph magenta"
+  echo "available.value $MAGENTA_AVAILABLE" 
+  echo "used.value $MAGENTA_USED" 
+
+  # publish yellow level
   YELLOW_AVAILABLE=$((100 * LEVEL_YELLOW / MAX_YELLOW)) 
   YELLOW_USED=$((100 - YELLOW_AVAILABLE))
-
-  # publish color levels
-  echo "blackavailable.value $BLACK_AVAILABLE" 
-  echo "blackused.value $BLACK_USED" 
-  echo "cyanavailable.value $CYAN_AVAILABLE" 
-  echo "cyanused.value $CYAN_USED" 
-  echo "magentaavailable.value $MAGENTA_AVAILABLE" 
-  echo "magentaused.value $MAGENTA_USED" 
-  echo "yellowavailable.value $YELLOW_AVAILABLE" 
-  echo "yellowused.value $YELLOW_USED" 
+  echo "multigraph yellow"
+  echo "available.value $YELLOW_AVAILABLE" 
+  echo "used.value $YELLOW_USED" 
 fi
 
 exit 0
