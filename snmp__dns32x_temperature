@@ -6,7 +6,8 @@
 # Monitor the internal temperature of a DNS-323 or DNS-325 NAS
 # Retrieves temperature of case, hdd1 and hdd2
 #
-# Used in http://bernaerts.dyndns.org/linux/...
+# Used in http://bernaerts.dyndns.org/nas/71-dns325-ffp07/314-dns325-ffp7-snmp-supervise-temperature-case-hdd
+#     and http://bernaerts.dyndns.org/nas/72-dns323-ffp07/318-dns323-ffp7-snmp-supervise-temperature-case-hdd
 #
 # Parameters :
 #   $1 : none, "snmpconf" or "config"
