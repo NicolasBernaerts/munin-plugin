@@ -1,0 +1,156 @@
+#!/bin/bash
+# -*- sh -*-
+# -------------------------------------------------------
+#  Munin node script
+#
+#  Monitor processes declared via the SNMP proc parameter
+#  Handles restart command if needed
+#
+#  Used in http://bernaerts.dyndns.org/linux/...
+#
+#  Parameters : 
+#    $1 : none, "snmpconf" or "config"
+#
+#  10/07/2014, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+
+: << =cut
+
+=head1 NAME
+
+snmp__dns32x_process - Munin plugin to monitor processes declared via the SNMP proc parameter
+
+=head1 APPLICABLE SYSTEMS
+
+Any Linux device running Net-SNMP
+
+=head1 CONFIGURATION
+
+Net-SNMP must be installed and processes declared via 'proc' parameter.
+
+=head1 INTERPRETATION
+
+The number of instances of each process
+
+=head1 MIB INFORMATION
+
+This plugin requires support for proc extended MIBs.
+
+=head1 MAGIC MARKERS
+
+  #%# family=snmpauto
+  #%# capabilities=snmpconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2014 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+# -------------------------------------------------------
+#  Initialisation
+# -------------------------------------------------------
+
+# set delimiter
+IFS='
+'
+
+# get device data from script name
+DEVICE_IP=`basename $0 | cut -d'_' -f2`
+
+# root processes OID
+MIB_PROCESS="1.3.6.1.4.1.2021.2.1"
+
+# -------------------------------------------------------
+#  Read all MIBs data from the device
+# -------------------------------------------------------
+
+# populate processes MIB array
+ARR_OID=(`snmpwalk -c public -v 1 -One $DEVICE_IP "$MIB_PROCESS" | sed 's/.'$MIB_PROCESS'.//g' | sed 's/ /|/g'`)
+
+# loop thru OID array to retrieve all processes data
+for OID in "${ARR_OID[@]}"
+do
+  PROC_IDX=$(echo $OID  | grep -e "^1\."  | sed 's/^.*|\(.*\)$/\1/'  | sed 's/"//g')
+  PROC_NAME=$(echo $OID | grep -e "^2\."  | sed 's/^.*|\(.*\)$/\1/'  | sed 's/"//g')
+  PROC_MIN=$(echo $OID  | grep -e "^3."   | sed 's/^.*|\(.*\)$/\1/'  | sed 's/"//g')
+  PROC_MAX=$(echo $OID  | grep -e "^4."   | sed 's/^.*|\(.*\)$/\1/'  | sed 's/"//g')
+  PROC_INST=$(echo $OID | grep -e "^5."   | sed 's/^.*|\(.*\)$/\1/'  | sed 's/"//g')
+  PROC_ERR=$(echo $OID  | grep -e "^100." | sed 's/^.*|\(.*\)$/\1/'  | sed 's/"//g')
+  PROC_CMD=$(echo $OID  | grep -e "^103." | sed 's/^.*:.\(.*\)$/\1/' | sed 's/"//g')
+
+  [ "$PROC_IDX"  != "" ] && ARR_IDX=("${ARR_IDX[@]}" "$PROC_IDX")
+  [ "$PROC_NAME" != "" ] && ARR_NAME=("${ARR_NAME[@]}" "$PROC_NAME")
+  [ "$PROC_MIN"  != "" ] && ARR_MIN=("${ARR_MIN[@]}" "$PROC_MIN")
+  [ "$PROC_MAX"  != "" ] && ARR_MAX=("${ARR_MAX[@]}" "$PROC_MAX")
+  [ "$PROC_INST" != "" ] && ARR_INST=("${ARR_INST[@]}" "$PROC_INST")
+  [ "$PROC_ERR"  != "" ] && ARR_ERR=("${ARR_ERR[@]}" "$PROC_ERR")
+  [ "$PROC_CMD"  != "" ] && ARR_CMD=("${ARR_CMD[@]}" "$PROC_CMD")
+done
+
+# -------------------------------------------------------
+#  Handle SNMP autoconf call
+# -------------------------------------------------------
+
+# snmpconf : announce required MIBs
+if [ "$1" = "snmpconf" ]; then
+  # loop thru processes
+  for ((i = 0; i < ${#ARR_IDX[@]}; i++))
+  do
+    echo "require $MIB_PROCESS.1.$i"
+  done
+
+# -------------------------------------------------------
+#  Handle configuration call
+# -------------------------------------------------------
+
+# config : read node configuration
+elif [ "$1" = "config" ]; then
+  # node general infos
+  echo "host_name $DEVICE_IP"
+
+  # loop thru processes
+  for ((i = 0; i < ${#ARR_IDX[@]}; i++))
+  do
+    echo "multigraph ${ARR_NAME[$i]}"
+    echo "graph_title ${ARR_NAME[$i]} process "
+    echo "graph_vlabel Number of instances"
+    echo "graph_category process"
+    echo "graph_info This graph shows the number of instance of ${ARR_NAME[$i]} process running"
+    echo "graph_args -l 0"
+    echo "${ARR_NAME[$i]}.label ${ARR_NAME[$i]}"
+    echo "${ARR_NAME[$i]}.type GAUGE"
+    echo "${ARR_NAME[$i]}.colour 0000ff"
+    echo "${ARR_NAME[$i]}.min 0"
+    [ "${ARR_MAX[$i]}" = "0" ] && MSG_INFO="${ARR_MIN[$i]} or more" || MSG_INFO="between ${ARR_MIN[$i]} and ${ARR_MAX[$i]}"
+    echo "${ARR_NAME[$i]}.info Instances of process ${ARR_NAME[$i]} should be $MSG_INFO. In case of problem, restart command is ${ARR_CMD[$i]}."
+  done
+
+# -------------------------------------------------------
+#  Handle normal call for values
+# -------------------------------------------------------
+
+# normal case 
+else
+  # loop thru processes
+  for ((i = 0; i < ${#ARR_IDX[@]}; i++))
+  do
+    echo "multigraph ${ARR_NAME[$i]}"
+    echo "${ARR_NAME[$i]}.value ${ARR_INST[$i]}"
+  done
+
+fi
+
+exit 0
