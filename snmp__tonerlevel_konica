@@ -1,0 +1,246 @@
+#!/bin/sh
+# -*- sh -*-
+# -------------------------------------------------------
+#  Munin node script
+#
+#  Monitor the toner level of Konica Minolta color printers
+#  Retrieves toner levels for black, cyan, magenta & yellow cartridges
+#
+#  Used in http://bernaerts.dyndns.org/linux/...
+#
+#  Parameters : 
+#    $1 : none, "snmpconf" or "config"
+#
+#  30/07/2014, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+
+: << =cut
+
+=head1 NAME
+
+snmp__tonerlevel_konica - Munin plugin to monitor the toner level of Konica Minolta Color Laser Printers
+
+=head1 APPLICABLE SYSTEMS
+
+Any SNMP-capable Konica Minolta Color Laser Printer
+
+=head1 CONFIGURATION
+
+No specific configuration needed.
+This plugin uses public community.
+
+=head1 INTERPRETATION
+
+The level in percentage of printer toner cartridges
+
+=head1 MIB INFORMATION
+
+This plugin requires support for the cartridge level MIBs.
+
+=head1 MAGIC MARKERS
+
+  #%# family=snmpauto
+  #%# capabilities=snmpconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2014 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+# -------------------------------------------------------
+#  Configure all MIBs adresses
+# -------------------------------------------------------
+
+# printer name
+MIB_NAME="1.3.6.1.2.1.1.6.0"
+
+# cartridge colors max level
+MIB_MAX_CYAN="1.3.6.1.2.1.43.11.1.1.8.1.1"
+MIB_MAX_MAGENTA="1.3.6.1.2.1.43.11.1.1.8.1.2"
+MIB_MAX_YELLOW="1.3.6.1.2.1.43.11.1.1.8.1.3"
+MIB_MAX_BLACK="1.3.6.1.2.1.43.11.1.1.8.1.4"
+
+# cartridge colors current level
+MIB_LEVEL_CYAN="1.3.6.1.2.1.43.11.1.1.9.1.1"
+MIB_LEVEL_MAGENTA="1.3.6.1.2.1.43.11.1.1.9.1.2"
+MIB_LEVEL_YELLOW="1.3.6.1.2.1.43.11.1.1.9.1.3"
+MIB_LEVEL_BLACK="1.3.6.1.2.1.43.11.1.1.9.1.4"
+
+# -------------------------------------------------------
+#  Get printer specs
+# -------------------------------------------------------
+
+# get printer name from script name
+PRINTER_IP=`basename $0 | cut -d'_' -f2`
+
+# -------------------------------------------------------
+#  Read all MIBs data from the printer
+# -------------------------------------------------------
+
+# if not in autoconf process, read SNMP data
+if [ "$1" != "snmpconf" ]; then 
+  # read SNMP MIB
+  MIB_RESULT=`snmpget -v1 -One -c public $PRINTER_IP $MIB_NAME $MIB_MAX_BLACK $MIB_MAX_CYAN $MIB_MAX_MAGENTA $MIB_MAX_YELLOW $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW`
+
+  # get values from result
+  PRINTER_NAME=`echo $MIB_RESULT | sed 's/.*'$MIB_NAME'[^"]*"\([^"]*\).*/\1/g'`
+  MAX_BLACK=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  MAX_CYAN=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  MAX_MAGENTA=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  MAX_YELLOW=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_YELLOW'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  LEVEL_BLACK=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  LEVEL_CYAN=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  LEVEL_MAGENTA=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  LEVEL_YELLOW=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_YELLOW'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+fi
+
+# -------------------------------------------------------
+#  Handle SNMP autoconf call
+# -------------------------------------------------------
+
+# snmpconf : announce required MIBs
+if [ "$1" = "snmpconf" ]; then
+#  echo "require $MIB_NAME"
+  echo "require $MIB_MAX_BLACK"
+  echo "require $MIB_MAX_CYAN"
+  echo "require $MIB_MAX_MAGENTA"
+  echo "require $MIB_MAX_YELLOW"
+  echo "require $MIB_LEVEL_BLACK"
+  echo "require $MIB_LEVEL_CYAN"
+  echo "require $MIB_LEVEL_MAGENTA"
+  echo "require $MIB_LEVEL_YELLOW"
+
+# -------------------------------------------------------
+#  Handle configuration call
+# -------------------------------------------------------
+
+# config : read node configuration
+elif [ "$1" = "config" ]; then
+  # printer general infos
+  echo "host_name $PRINTER_IP"
+
+  # black cartridge
+  echo "multigraph black"
+  echo "graph_title Black Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Black toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME<br/>Black toner level is $LEVEL_BLACK out of $MAX_BLACK"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour 000000"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour d0d0d0"
+  echo "used.min 0"
+  echo "used.max 100"
+
+  # cyan cartridge
+  echo "multigraph cyan"
+  echo "graph_title Cyan Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Cyan toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME cyan toner level is $LEVEL_CYAN out of $MAX_CYAN"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour 00ffff"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour d0ffff"
+  echo "used.min 0"
+  echo "used.max 100"
+
+  # magenta cartridge
+  echo "multigraph magenta"
+  echo "graph_title Magenta Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Magenta toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME magenta toner level is $LEVEL_MAGENTA out of $MAX_MAGENTA"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour ff00ff"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour ffd0ff"
+  echo "used.min 0"
+  echo "used.max 100"
+
+  # yellow cartridge
+  echo "multigraph yellow"
+  echo "graph_title Yellow Toner"
+  echo "graph_vlabel Cartridge level (%)"
+  echo "graph_category sensors"
+  echo "graph_info This graph shows the Yellow toner level in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "available.info $PRINTER_NAME yellow toner level is $LEVEL_YELLOW out of $MAX_YELLOW"
+  echo "available.label available"
+  echo "available.draw AREA"
+  echo "available.colour ffff00"
+  echo "available.min 0"
+  echo "available.max 100"
+  echo "used.label used"
+  echo "used.draw STACK"
+  echo "used.colour ffffa0"
+  echo "used.min 0"
+  echo "used.max 100"
+
+# -------------------------------------------------------
+#  Handle data read call
+# -------------------------------------------------------
+
+# normal case : read cartridge levels
+else
+  # publish black level
+  BLACK_AVAILABLE=$((100 * LEVEL_BLACK / MAX_BLACK))
+  BLACK_USED=$((100 - BLACK_AVAILABLE))
+  echo "multigraph black"
+  echo "available.value $BLACK_AVAILABLE" 
+  echo "used.value $BLACK_USED" 
+
+  # publish cyan level
+  CYAN_AVAILABLE=$((100 * LEVEL_CYAN / MAX_CYAN)) 
+  CYAN_USED=$((100 - CYAN_AVAILABLE))
+  echo "multigraph cyan"
+  echo "available.value $CYAN_AVAILABLE" 
+  echo "used.value $CYAN_USED" 
+
+  # publish magenta level
+  MAGENTA_AVAILABLE=$((100 * LEVEL_MAGENTA / MAX_MAGENTA)) 
+  MAGENTA_USED=$((100 - MAGENTA_AVAILABLE))
+  echo "multigraph magenta"
+  echo "available.value $MAGENTA_AVAILABLE" 
+  echo "used.value $MAGENTA_USED" 
+
+  # publish yellow level
+  YELLOW_AVAILABLE=$((100 * LEVEL_YELLOW / MAX_YELLOW)) 
+  YELLOW_USED=$((100 - YELLOW_AVAILABLE))
+  echo "multigraph yellow"
+  echo "available.value $YELLOW_AVAILABLE" 
+  echo "used.value $YELLOW_USED" 
+fi
+
+exit 0
