@@ -64,22 +64,22 @@ if [ "$1" = "config" ]; then
   echo "case.label Internal case"
   echo "case.colour 00ff00"
   echo "case.info Case internal sensor"
-  echo "case.warning $CASE_WARNING"
-  echo "case.critical $CASE_CRITICAL"
+  echo "case.warning :$CASE_WARNING"
+  echo "case.critical :$CASE_CRITICAL"
 
   # disk1 temperature
   echo "disk1.label Disk 1"
   echo "disk1.colour 0000ff"
   echo "disk1.info HDD sensor, $VALUE_INFO_DISK1"
-  echo "disk1.warning $DISK_WARNING"
-  echo "disk1.critical $DISK_CRITICAL"
+  echo "disk1.warning :$DISK_WARNING"
+  echo "disk1.critical :$DISK_CRITICAL"
 
   # disk2 temperature
   echo "disk2.label Disk 2"
   echo "disk2.colour ff00ff"
   echo "disk2.info HDD sensor, $VALUE_INFO_DISK2"
-  echo "disk2.warning $DISK_WARNING"
-  echo "disk2.critical $DISK_CRITICAL"
+  echo "disk2.warning :$DISK_WARNING"
+  echo "disk2.critical :$DISK_CRITICAL"
 
 # -------------------------------------------------------
 # Handle data read call
