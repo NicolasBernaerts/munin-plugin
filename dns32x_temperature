@@ -55,7 +55,7 @@ if [ "$1" = "config" ]; then
   echo "graph_args --lower-limit $FAN_STOP --rigid"
 
   # fan speed
-  echo "fan.info Fan speed"
+  echo "fan.info Fan speed (off:$FAN_STOP, low:$FAN_LOW, high:$FAN_HIGH)"
   echo "fan.label Fan"
   echo "fan.colour c0c0c0"
   echo "fan.draw AREA"
