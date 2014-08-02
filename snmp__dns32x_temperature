@@ -16,6 +16,7 @@
 # 30/06/2014, V2.0 - Add fan speed status
 # 05/07/2014, V2.1 - Add hard disk information
 # 25/07/2014, V3.0 - Add DNS-323 compatibility
+# 02/08/2014, V3.1 - Add warning and critical levels
 # -------------------------------------------------------
 
 : << =cut
@@ -64,6 +65,12 @@ Copyright (C) 2014 Nicolas Bernaerts
 GPLv2.
 
 =cut
+
+# define warning and critical temperature levels
+CASE_WARNING="45"
+CASE_CRITICAL="50"
+DISK_WARNING="45"
+DISK_CRITICAL="50"
 
 # define display value for 3 fan states (stop, low & high)
 FAN_STOP="20"
@@ -133,7 +140,7 @@ elif [ "$1" = "config" ]; then
   echo "graph_args --lower-limit $FAN_STOP --rigid"
 
   # fan speed
-  echo "fan.info Fan speed"
+  echo "fan.info Fan speed (off:$FAN_STOP, low:$FAN_LOW, high:$FAN_HIGH)"
   echo "fan.label Fan"
   echo "fan.colour c0c0c0"
   echo "fan.draw AREA"
@@ -142,16 +149,24 @@ elif [ "$1" = "config" ]; then
   echo "case.label Internal case"
   echo "case.colour 00ff00"
   echo "case.info Case internal sensor"
+  echo "case.warning :$CASE_WARNING"
+  echo "case.critical :$CASE_CRITICAL"
+
 
   # disk1 temperature
   echo "disk1.label Disk 1"
   echo "disk1.colour 0000ff"
   echo "disk1.info HDD sensor, $VALUE_INFO_DISK1"
+  echo "disk1.warning :$DISK_WARNING"
+  echo "disk1.critical :$DISK_CRITICAL"
+
 
   # disk2 temperature
   echo "disk2.label Disk 2"
   echo "disk2.colour ff00ff"
   echo "disk2.info HDD sensor, $VALUE_INFO_DISK2"
+  echo "disk2.warning :$DISK_WARNING"
+  echo "disk2.critical :$DISK_CRITICAL"
 
 # -------------------------------------------------------
 # Handle data read call
