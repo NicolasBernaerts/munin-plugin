@@ -2,10 +2,8 @@
 # ----------------------------------------------
 # Muninlite plugin for DNS-323 & DNS-325
 #
-# This plugin retrieve the number of running instances of a process.
-# In case the process is not running, a restart command can be issued.
-#
-# So, it can be used as a watchdog for important daemons.
+# Used to get number of instances of a running process.
+# In case process is not running, a wake-up command can be run.
 #
 # 04/08/2014, V1.0 - Creation by N. Bernaerts
 # ----------------------------------------------
@@ -18,9 +16,9 @@
 #  DISPLAY - Display name
 #  PROCESS - Process name
 #  RESTART - Restart command
-ARR_DISPLAY=("RSync")
-ARR_PROCESS=("rsync")
-ARR_COMMAND=("/ffp/start/rsyncd.sh restart")
+ARR_DISPLAY=("RSync" "SNMP")
+ARR_PROCESS=("rsync" "snmpd")
+ARR_COMMAND=("/ffp/start/rsyncd.sh restart" "/ffp/start/snmpd.sh restart")
 
 # -------------------------------------------------------
 # Handle configuration call
@@ -33,17 +31,16 @@ if [ "$1" = "config" ]; then
   for ((i = 0; i < ${#ARR_PROCESS[@]}; i++))
   do
     echo "multigraph ${ARR_DISPLAY[$i]}"
-    echo "graph_title ${ARR_DISPLAY[$i]} process "
-    echo "graph_vlabel Running instances"
+    echo "graph_title ${ARR_DISPLAY[$i]}"
+    echo "graph_vlabel Number of processes"
     echo "graph_category process"
-    echo "graph_info This graph shows the number of instance of ${ARR_PROCESS[$i]} process running"
-    echo "graph_args -l 0"
-    echo "${ARR_DISPLAY[$i]}.label ${ARR_PROCESS[$i]}"
-    echo "${ARR_DISPLAY[$i]}.type GAUGE"
-    echo "${ARR_DISPLAY[$i]}.colour 0000ff"
-    echo "${ARR_DISPLAY[$i]}.min 0"
-    echo "${ARR_DISPLAY[$i]}.warning 0:"
-    echo "${ARR_DISPLAY[$i]}.info If no instance is running, -> ${ARR_COMMAND[$i]} <- will be invoqued."
+    echo "graph_info This graph shows the number of ${ARR_PROCESS[$i]} processes running"
+    echo "running.label ${ARR_DISPLAY[$i]} processes"
+    echo "running.type GAUGE"
+    echo "running.min 0"
+    echo "running.critical 1:"
+    echo "running.info If no instance is running, -> ${ARR_COMMAND[$i]} <- will be invoqued."
+    echo "running.colour 0000ff"
   done
 
 # -------------------------------------------------------
@@ -60,7 +57,7 @@ else
 
     # display result
     echo "multigraph ${ARR_DISPLAY[$i]}"
-    echo "${ARR_DISPLAY[$i]}.value $NUMBER"
+    echo "running.value $NUMBER"
 
     # if no instance is running, run restart command
     [ "$NUMBER" = "0" ] && ${ARR_COMMAND[$i]} 1>/dev/null 2>/dev/null &
