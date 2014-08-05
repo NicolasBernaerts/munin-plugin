@@ -63,7 +63,7 @@ else
     echo "${ARR_DISPLAY[$i]}.value $NUMBER"
 
     # if no instance is running, run restart command
-    [ "$NUMBER" = "0" ] && ${ARR_COMMAND[$i]} 1>/dev/null 2>/dev/null
+    [ "$NUMBER" = "0" ] && ${ARR_COMMAND[$i]} 1>/dev/null 2>/dev/null &
   done
 
 fi
