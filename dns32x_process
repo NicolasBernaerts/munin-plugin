@@ -1,0 +1,72 @@
+#!/ffp/bin/bash
+# ----------------------------------------------
+# Muninlite plugin for DNS-323 & DNS-325
+#
+# Used to get number of instances of a running process.
+#
+# In case the process is not running, 
+# a restart command can be issued.
+#
+# 04/08/2014, V1.0 - Creation by N. Bernaerts
+# ----------------------------------------------
+
+# -------------------------------------------------------
+# Initialisation
+# -------------------------------------------------------
+
+# declare list of processes to supervise
+#  DISPLAY - Display name
+#  PROCESS - Process name
+#  RESTART - Restart command
+ARR_DISPLAY=("RSync")
+ARR_PROCESS=("rsync")
+ARR_COMMAND=("/ffp/start/rsyncd.sh restart")
+
+# -------------------------------------------------------
+# Handle configuration call
+# -------------------------------------------------------
+
+# config : read node configuration
+if [ "$1" = "config" ]; then
+
+  # loop thru processes
+  for ((i = 0; i < ${#ARR_PROCESS[@]}; i++))
+  do
+    echo "multigraph ${ARR_DISPLAY[$i]}"
+    echo "graph_title ${ARR_DISPLAY[$i]} process "
+    echo "graph_vlabel Running instances"
+    echo "graph_category process"
+    echo "graph_info This graph shows the number of instance of ${ARR_PROCESS[$i]} process running"
+    echo "graph_args -l 0"
+    echo "${ARR_DISPLAY[$i]}.label ${ARR_PROCESS[$i]}"
+    echo "${ARR_DISPLAY[$i]}.type GAUGE"
+    echo "${ARR_DISPLAY[$i]}.colour 0000ff"
+    echo "${ARR_DISPLAY[$i]}.min 0"
+    echo "${ARR_DISPLAY[$i]}.warning 0:"
+    echo "${ARR_DISPLAY[$i]}.info If no instance is running, -> ${ARR_COMMAND[$i]} <- will be invoqued."
+  done
+
+# -------------------------------------------------------
+# Handle data read call
+# -------------------------------------------------------
+
+# normal case : get number of running instances for supervised processes
+else
+  # loop thru processes
+  for ((i = 0; i < ${#ARR_PROCESS[@]}; i++))
+  do
+    # get number of running process instances
+    NUMBER=`ps -ef 2>/dev/null | grep -v grep | grep -c ${ARR_PROCESS[$i]}`
+
+    # display result
+    echo "multigraph ${ARR_DISPLAY[$i]}"
+    echo "${ARR_DISPLAY[$i]}.value $NUMBER"
+
+    # if no instance is running, run restart command
+    [ "$NUMBER" = "0" ] && ${ARR_COMMAND[$i]} 1>/dev/null 2>/dev/null
+  done
+
+fi
+
+# end
+exit 0
