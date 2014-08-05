@@ -2,10 +2,10 @@
 # ----------------------------------------------
 # Muninlite plugin for DNS-323 & DNS-325
 #
-# Used to get number of instances of a running process.
+# This plugin retrieve the number of running instances of a process.
+# In case the process is not running, a restart command can be issued.
 #
-# In case the process is not running, 
-# a restart command can be issued.
+# So, it can be used as a watchdog for important daemons.
 #
 # 04/08/2014, V1.0 - Creation by N. Bernaerts
 # ----------------------------------------------
