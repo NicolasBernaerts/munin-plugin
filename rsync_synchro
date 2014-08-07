@@ -1,0 +1,128 @@
+#!/bin/bash
+# -*- sh -*-
+# -------------------------------------------------------
+#  Munin node script
+#
+#  Monitor RSync synchronisation connexions
+#
+#  Handles connexions by declared modules
+#
+#  Parameters :
+#    $1 : none, "autoconf" or "config"
+#
+#  06/08/2014, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+
+: << =cut
+
+=head1 NAME
+
+rsync_connexion - Munin plugin to monitor RSync synchronisations
+
+=head1 APPLICABLE SYSTEMS
+
+Any system with RSync daemon running
+
+=head1 CONFIGURATION
+
+Please configure your rsyncd.conf and rsyncd.log path
+
+=head1 INTERPRETATION
+
+Number of synchronisations by module
+
+=head1 MAGIC MARKERS
+
+  #%# family=auto
+  #%# capabilities=autoconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2014 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+# -------------------------------------------------------
+#  User defined variables
+# -------------------------------------------------------
+
+# please check the path of configuration file (for mudules list)
+RSYNC_CONF="/etc/rsyncd.conf"
+
+# please check the path of log file
+RSYNC_LOG="/var/log/rsync.log"
+
+# -------------------------------------------------------
+# Initialisation
+# -------------------------------------------------------
+
+# set delimiter
+IFS='
+'
+
+# populate modules list
+ARR_MODULE=(`cat "$RSYNC_CONF" | grep "\[" | sed 's/^\[\(.*\)\]/\1/g'`)
+
+# -------------------------------------------------------
+#  Handle autoconf call
+# -------------------------------------------------------
+
+# call with autoconf
+if [ "$1" = "autoconf" ]; then
+  [ -f "$RSYNC_LOG" ] && echo "yes" || echo "no (log file $RSYNC_LOG not present)"
+
+# -------------------------------------------------------
+#  Handle configuration call
+# -------------------------------------------------------
+
+# call with config
+elif [ "$1" = "config" ]; then
+  echo "graph_title RSync Synchro"
+  echo "graph_category system"
+  echo "graph_vlabel Number of Synchronisations"
+  echo "graph_args --lower-limit 0"
+
+  # loop thru modules array
+  for MODULE in "${ARR_MODULE[@]}"
+  do
+    # data description
+    # counter is multiplied by 300 to convert /sec -> /5mn
+    echo "$MODULE.type COUNTER"
+    echo "$MODULE.label $MODULE"
+    echo "$MODULE.info Synchronisations by $MODULE"
+    echo "$MODULE.max 5"
+    echo "$MODULE.cdef $MODULE,300,*"
+  done
+
+# -------------------------------------------------------
+#  Handle data read call
+# -------------------------------------------------------
+
+# normal call to get values
+else
+  # loop thru modules array
+  for MODULE in "${ARR_MODULE[@]}"
+  do
+    # get counter value for this module
+    NUM_SYNC=`grep -c "rsync to $MODULE" $RSYNC_LOG`
+
+    # display value
+    echo "$MODULE.value $NUM_SYNC"
+  done
+
+fi
+
+# end
+exit 0
