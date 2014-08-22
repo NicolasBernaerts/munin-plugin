@@ -20,7 +20,7 @@
 
 =head1 NAME
 
-snmp__tonerlevel_hp - Munin plugin to monitor the toner level of HP Printers
+snmp__tonerlevel_hp - Munin plugin to monitor the toner level of HP Color Laser Printers
 
 =head1 APPLICABLE SYSTEMS
 
@@ -166,7 +166,7 @@ elif [ "$1" = "config" ]; then
     echo "graph_args --upper-limit 100 -l 0 --rigid"
   fi
 
-  echo "black-left.info $PRINTER_NAME<br/>Black toner level is $LEVEL_BLACK out of $MAX_BLACK"
+  echo "black-left.info $PRINTER_NAME black toner level is $LEVEL_BLACK out of $MAX_BLACK"
   echo "black-left.label Black available"
   echo "black-left.draw AREASTACK"
   echo "black-left.colour 000000"
