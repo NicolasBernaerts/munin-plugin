@@ -6,7 +6,7 @@
 #  Monitor the toner level of HP color printers
 #  Retrieves toner levels for black, cyan, magenta & yellow cartridges
 #
-#  Used in http://bernaerts.dyndns.org/linux/...
+#  Used in http://bernaerts.dyndns.org/linux/320-munin-snmp-plugin-hp-laser-toner-level
 #
 #  Parameters : 
 #    $1 : none, "snmpconf" or "config"
