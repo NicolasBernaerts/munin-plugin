@@ -48,10 +48,9 @@ if [ "$1" = "config" ]; then
     # display disk information
     echo "$DISK_DEVICE.label $DISK_MOUNT"
     echo "$DISK_DEVICE.type GAUGE"
+    echo "$DISK_DEVICE.draw LINE2"
     echo "$DISK_DEVICE.min 0"
     echo "$DISK_DEVICE.max 100"
-    echo "$DISK_DEVICE.warning :95"
-    echo "$DISK_DEVICE.critical :99"
     echo "$DISK_DEVICE.info $DISK_LEFT of $DISK_SIZE Mb available on device /dev/$DISK_DEVICE"
   done
 
