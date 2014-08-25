@@ -107,7 +107,7 @@ if [ "$1" != "snmpconf" ]; then
   # read SNMP MIB
   MIB_RESULT=`snmpget -v1 -One -c public $PRINTER_IP $MIB_NAME \
    $MIB_MAX_BLACK $MIB_MAX_CYAN $MIB_MAX_MAGENTA $MIB_MAX_YELLOW \
-  $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW`
+   $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW`
 
   # get values from result
   PRINTER_NAME=`echo $MIB_RESULT | sed 's/.*'$MIB_NAME'[^"]*"\([^"]*\).*/\1/g'`
