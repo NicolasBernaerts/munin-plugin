@@ -35,7 +35,7 @@ if [ "$1" = "config" ]; then
     echo "graph_vlabel Number of processes"
     echo "graph_category process"
     echo "graph_info This graph shows the number of ${ARR_PROCESS[$i]} processes running"
-    echo "running.label ${ARR_DISPLAY[$i]} processes"
+    echo "running.label ${ARR_DISPLAY[$i]}"
     echo "running.type GAUGE"
     echo "running.min 0"
     echo "running.critical 1:"
