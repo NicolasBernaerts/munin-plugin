@@ -21,11 +21,11 @@
 
 =head1 NAME
 
-sensor-hwgste - Munin plugin to monitor temperature and humidity from sensor xxxxxxx
+hwgste - Munin plugin to monitor temperature and humidity from sensor HWg-STE
 
 =head1 APPLICABLE SYSTEMS
 
-Any xxxxxx sensor
+Any HWg-STE sensor
 
 =head1 CONFIGURATION
 
