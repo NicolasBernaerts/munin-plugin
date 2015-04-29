@@ -1,0 +1,134 @@
+#!/ffp/bin/bash 
+# ----------------------------------------------
+# Muninlite plugin for DNS-325
+# 
+# Used to supervise :
+#  * fan speed
+#  * case temperature
+#  * hdd temperature
+#
+# This script needs the following utilities to run :
+#  * fan_control
+#  * smartctl
+#
+# To install muninlite on DNS-325, please check :
+#  http://bernaerts.dyndns.org/nas/71-dns325-ffp07/319-dns325-dns323-ffp7-munin-node-muninlite
+#
+# 28/04/2015, V1.0 - Creation by N. Bernaerts
+# ----------------------------------------------
+
+# -------------------------------------------------------
+#   Initialisation
+# -------------------------------------------------------
+
+# define warning and critical temperature levels
+CASE_WARNING="45"
+CASE_CRITICAL="50"
+DISK_WARNING="45"
+DISK_CRITICAL="50"
+
+# define display value for 3 fan states (stop, low & high)
+FAN_STOP="20"
+FAN_LOW="22"
+FAN_HIGH="24"
+
+# get nas name
+NAS_IP=$(hostname)
+
+# declaration of disks
+ARR_DISK=("sda" "sdb")
+
+# -------------------------------------------------------
+#   Configuration call
+# -------------------------------------------------------
+
+if [ "$1" = "config" ]; then
+
+  # -------------------------------
+  #    NAS general infos
+  # -------------------------------
+
+  echo "host_name $NAS_IP"
+  echo "graph_title Temperature & Fan speed"
+  echo "graph_vlabel Degree Celsius"
+  echo "graph_category temperature"
+  echo "graph_info Temperature Levels & Fan speed"
+  echo "graph_args --lower-limit $FAN_STOP --rigid"
+
+  # -------------------------------
+  #    Fan speed
+  # -------------------------------
+
+  echo "fan.label Fan"
+  echo "fan.info Fan speed (off:$FAN_STOP, low:$FAN_LOW, high:$FAN_HIGH)"
+  echo "fan.colour c0c0c0"
+  echo "fan.draw AREA"
+
+  # -------------------------------
+  #    Case internal temperature
+  # -------------------------------
+
+  echo "case.label Internal case"
+  echo "case.info Internal Case Sensor"
+  echo "case.colour 00ff00"
+  echo "case.warning :${CASE_WARNING}"
+  echo "case.critical :${CASE_CRITICAL}"
+
+  # -------------------------------
+  #    Hard drives temperature
+  # -------------------------------
+
+  for DISK in "${ARR_DISK[@]}"
+  do
+    # get disk size (in Gb)
+    DISK_INFO="No disk"
+    DISK_SIZE=$(smartctl -i --device=marvell /dev/${DISK} | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
+
+    # if disk is present, get its full characteristics
+    if [ "${DISK_SIZE}" != "" ]
+    then
+      DISK_MODEL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+      DISK_SERIAL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+      DISK_INFO="${DISK_SIZE} Gb, model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
+    fi
+
+    # display disk1 configuration
+    echo "${DISK}.label /dev/${DISK}"
+    echo "${DISK}.info ${DISK_INFO}"
+    echo "${DISK}.warning :${DISK_WARNING}"
+    echo "${DISK}.critical :${DISK_CRITICAL}"
+  done
+
+# -------------------------------------------------------
+#    Normal call : Read Data
+# -------------------------------------------------------
+
+else
+
+  # read fan state
+  FAN_STATE=$(fan_control -g 3 | sed 's/^.*is \([0-9]*\).*$/\1/')
+
+  # publish fan speed
+  case ${FAN_STATE} in
+    0) echo "fan.value ${FAN_STOP}" ;;
+    1) echo "fan.value ${FAN_LOW}" ;;
+    2) echo "fan.value ${FAN_HIGH}" ;;
+    *) echo "fan.value U" ;;
+  esac
+
+  # read internal case temperature
+  TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\).*$/\1/')
+  
+  # publish case temperature
+  echo "case.value ${TEMP_CASE}"
+
+  for DISK in "${ARR_DISK[@]}"
+  do
+    # read hard disk 1 temperature
+    TEMP_DISK=$(smartctl -A --device=marvell /dev/${DISK} | grep "^194.*" | sed 's/^.*- *\([0-9]*\).*$/\1/g')
+
+    # publish disk temperature
+    echo "${DISK}.value ${TEMP_DISK}"
+  done
+
+fi
