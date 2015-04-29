@@ -93,9 +93,9 @@ elif [ "$1" = "config" ]; then
   for DISK in "${ARR_DISK[@]}"
   do
     # read disk data (size in Gb)
-    DISK_MODEL=$(smartctl -i -d sat /dev/$DISK | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SERIAL=$(smartctl -i -d sat /dev/$DISK | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SIZE=$(smartctl -i -d sat /dev/$DISK | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
+    DISK_MODEL=$(smartctl -i -d auto /dev/$DISK | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+    DISK_SERIAL=$(smartctl -i -d auto /dev/$DISK | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+    DISK_SIZE=$(smartctl -i -d auto /dev/$DISK | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
 
     # display configuration
     echo "$DISK.label $DISK"
@@ -111,7 +111,7 @@ else
   for DISK in "${ARR_DISK[@]}"
   do
     # read disk data
-    DISK_TEMP=$(smartctl -a -d sat /dev/$DISK | grep "^194" | sed 's/^.*-[ ]*\([0-9]*\).*$/\1/')
+    DISK_TEMP=$(smartctl -a -d auto /dev/$DISK | grep "^194" | sed 's/^.*-[ ]*\([0-9]*\).*$/\1/')
 
     # display result
     echo "$DISK.value $DISK_TEMP"
