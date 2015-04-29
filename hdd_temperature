@@ -3,8 +3,7 @@
 # -------------------------------------------------------
 #  Munin node script
 #
-#  Detect system hard disk list and
-#  monitor hard drives temperature
+#  Monitor harddrives temperature
 #
 #  Used in http://bernaerts.dyndns.org/linux/...
 #
@@ -93,14 +92,14 @@ elif [ "$1" = "config" ]; then
 
   for DISK in "${ARR_DISK[@]}"
   do
-    # read disk data
+    # read disk data (size in Gb)
     DISK_MODEL=$(smartctl -i -d sat /dev/$DISK | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
     DISK_SERIAL=$(smartctl -i -d sat /dev/$DISK | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SIZE=$(smartctl -i -d sat /dev/$DISK | grep "^User Capacity" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+    DISK_SIZE=$(smartctl -i -d sat /dev/$DISK | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
 
     # display configuration
     echo "$DISK.label $DISK"
-    echo "$DISK.info Model $DISK_MODEL, s/n $DISK_SERIAL, capacity $DISK_SIZE"
+    echo "$DISK.info $DISK_SIZE Gb, Model $DISK_MODEL, s/n $DISK_SERIAL"
     echo "$DISK.warning $TEMP_WARNING"
   done
 
