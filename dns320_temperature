@@ -10,6 +10,7 @@
 # This script needs the following utilities to run :
 #  * fan_control
 #  * smartctl
+#  * lsblk
 #
 # To install muninlite on DNS-320, please check :
 #  http://bernaerts.dyndns.org/nas/71-dns325-ffp07/319-dns325-dns323-ffp7-munin-node-muninlite
@@ -17,9 +18,9 @@
 # 28/04/2015, V1.0 - Creation by N. Bernaerts
 # ----------------------------------------------
 
-# hard disk devices
-DISK1="/dev/sda"
-DISK2="/dev/sdb"
+# -------------------------------------------------------
+#  Disk array initialisation
+# -------------------------------------------------------
 
 # define warning and critical temperature levels
 CASE_WARNING="45"
@@ -29,11 +30,14 @@ DISK_CRITICAL="50"
 
 # define display value for 3 fan states (stop, low & high)
 FAN_STOP="20"
-FAN_LOW="24"
-FAN_HIGH="28"
+FAN_LOW="22"
+FAN_HIGH="24"
 
 # get nas name
 NAS_IP=$(hostname)
+
+# load array all disks available on the system
+ARR_DISK=($(lsblk --nodeps --noheadings | cut -d' ' -f1 | grep "sd."))
 
 # -------------------------------------------------------
 #   Configuration call
@@ -72,50 +76,29 @@ if [ "$1" = "config" ]; then
   echo "case.critical :${CASE_CRITICAL}"
 
   # -------------------------------
-  #    Hard Disk 1 temperature
+  #    Hard drives temperature
   # -------------------------------
 
-  # get disk size (in Gb)
-  DISK_INFO="No disk"
-  DISK_SIZE=$(smartctl -i --device=marvell ${DISK1} | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
+  for DISK in "${ARR_DISK[@]}"
+  do
+    # get disk size (in Gb)
+    DISK_INFO="No disk"
+    DISK_SIZE=$(smartctl -i --device=marvell /dev/${DISK} | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
 
-  # if disk is present, get its full characteristics
-  if [ "${DISK_SIZE}" != "" ]
-  then
-    DISK_MODEL=$(smartctl -i --device=marvell ${DISK1} | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SERIAL=$(smartctl -i --device=marvell ${DISK1} | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_INFO="Hard disk 1 (${DISK_SIZE} Gb) - Model ${DISK_MODEL}, S/n ${DISK_SERIAL}"
-  fi
+    # if disk is present, get its full characteristics
+    if [ "${DISK_SIZE}" != "" ]
+    then
+      DISK_MODEL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+      DISK_SERIAL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+      DISK_INFO="${DISK_SIZE} Gb, model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
+    fi
 
-  # display disk1 configuration
-  echo "disk1.label Hard Disk 1"
-  echo "disk1.info ${DISK_INFO}"
-  echo "disk1.colour 0000ff"
-  echo "disk1.warning :${DISK_WARNING}"
-  echo "disk1.critical :${DISK_CRITICAL}"
-
-  # -------------------------------
-  #    Hard Disk 2 temperature
-  # -------------------------------
-
-  # get disk size (in Gb)
-  DISK_INFO="No disk"
-  DISK_SIZE=$(smartctl -i --device=marvell ${DISK2} | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
-
-  # if disk is present, get its full characteristics
-  if [ "${DISK_SIZE}" != "" ]
-  then
-    DISK_MODEL=$(smartctl -i --device=marvell ${DISK2} | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SERIAL=$(smartctl -i --device=marvell ${DISK2} | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_INFO="Hard disk 2 (${DISK_SIZE} Gb) - Model ${DISK_MODEL}, S/n ${DISK_SERIAL}"
-  fi
-
-  # display disk1 configuration
-  echo "disk2.label Hard Disk 2"
-  echo "disk2.info ${DISK_INFO}"
-  echo "disk2.colour ff00ff"
-  echo "disk2.warning :${DISK_WARNING}"
-  echo "disk2.critical :${DISK_CRITICAL}"
+    # display disk1 configuration
+    echo "${DISK}.label /dev/${DISK}"
+    echo "${DISK}.info ${DISK_INFO}"
+    echo "${DISK}.warning :${DISK_WARNING}"
+    echo "${DISK}.critical :${DISK_CRITICAL}"
+  done
 
 # -------------------------------------------------------
 #    Normal call : Read Data
@@ -126,15 +109,6 @@ else
   # read fan state
   FAN_STATE=$(fan_control -g 3 | sed 's/^.*is \([0-9]*\).*$/\1/')
 
-  # read internal case temperature
-  TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\).*$/\1/')
-  
-  # read hard disk 1 temperature
-  TEMP_DISK1=$(smartctl -A --device=marvell ${DISK1} | grep "^194.*" | sed 's/^.*- *\([0-9]*\).*$/\1/g')
-  
-  # read hard disk 2 temperature
-  TEMP_DISK2=$(smartctl -A --device=marvell ${DISK2} | grep "^194.*" | sed 's/^.*- *\([0-9]*\).*$/\1/g')
-
   # publish fan speed
   case ${FAN_STATE} in
     0) echo "fan.value ${FAN_STOP}" ;;
@@ -143,10 +117,19 @@ else
     *) echo "fan.value U" ;;
   esac
 
-  # publish temperature levels
+  # read internal case temperature
+  TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\).*$/\1/')
+  
+  # publish case temperature
   echo "case.value ${TEMP_CASE}"
-  echo "disk1.value ${TEMP_DISK1}"
-  echo "disk2.value ${TEMP_DISK2}"
+
+  for DISK in "${ARR_DISK[@]}"
+  do
+    # read hard disk 1 temperature
+    TEMP_DISK=$(smartctl -A --device=marvell /dev/${DISK} | grep "^194.*" | sed 's/^.*- *\([0-9]*\).*$/\1/g')
+
+    # publish disk temperature
+    echo "${DISK}.value ${TEMP_DISK}"
+  done
 
 fi
-
