@@ -105,20 +105,23 @@ if [ "$1" = "config" ]; then
 
 else
 
-  # read fan state
-  FAN_STATE=$(fan_control -g 3 | sed 's/^.*is \([0-9]*\).*$/\1/')
+  # retrieve fan status from fanspeed command
+  FAN_STATE=$(fanspeed g)
+
+  # if fan is supposed to rotate, retrieve last fan speed change in /var/log/user.log
+  [ "$FAN_STATE" != "stop" ] && FAN_STATE=$(cat /var/log/user.log | grep "Set Fan Speed" | tail -n 1 | sed 's/^.*"\([^"]*\)".*$/\1/g' | tr '[:upper:]' '[:lower:]')
 
   # publish fan speed
   case ${FAN_STATE} in
-    0) echo "fan.value ${FAN_STOP}" ;;
-    1) echo "fan.value ${FAN_LOW}" ;;
-    2) echo "fan.value ${FAN_HIGH}" ;;
+    "stop") echo "fan.value ${FAN_STOP}" ;;
+    "low") echo "fan.value ${FAN_LOW}" ;;
+    "high") echo "fan.value ${FAN_HIGH}" ;;
     *) echo "fan.value U" ;;
   esac
 
   # read internal case temperature
-  TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\).*$/\1/')
-  
+  TEMP_CASE=$(temperature g 0 | sed 's/^.* = \([0-9]*\).*$/\1/g')
+
   # publish case temperature
   echo "case.value ${TEMP_CASE}"
 
