@@ -73,7 +73,7 @@ IFS='
 '
 
 # populate modules list
-ARR_MODULE=(`cat "$RSYNC_CONF" | grep "\[" | sed 's/^\[\(.*\)\]/\1/g'`)
+ARR_MODULE=( $(cat "$RSYNC_CONF" | grep "\[" | sed 's/^\[\(.*\)\]/\1/g') )
 
 # -------------------------------------------------------
 #  Handle autoconf call
@@ -116,7 +116,7 @@ else
   for MODULE in "${ARR_MODULE[@]}"
   do
     # get counter value for this module
-    NUM_SYNC=`grep -c "rsync to $MODULE" $RSYNC_LOG`
+    NUM_SYNC=$(grep -c "rsync to $MODULE" $RSYNC_LOG)
 
     # display value
     echo "$MODULE.value $NUM_SYNC"
