@@ -42,9 +42,9 @@ if [ "$1" = "config" ]; then
     # retrieve disk information
     DISK_DEVICE=$(echo $DISK | cut -d'|' -f1 | sed 's/\/dev\///')
     DISK_SIZE=$(echo $DISK | cut -d'|' -f2)
-    DISK_SIZE=$(expr $DISK_SIZE / 1024)
+    DISK_SIZE=$(expr $DISK_SIZE / 1048576)
     DISK_LEFT=$(echo $DISK | cut -d'|' -f4)
-    DISK_LEFT=$(expr $DISK_LEFT / 1024)
+    DISK_LEFT=$(expr $DISK_LEFT / 1048576)
     DISK_MOUNT=$(echo $DISK | cut -d'|' -f6)
 
     # display disk information
@@ -53,7 +53,7 @@ if [ "$1" = "config" ]; then
     echo "$DISK_DEVICE.draw LINE2"
     echo "$DISK_DEVICE.min 0"
     echo "$DISK_DEVICE.max 100"
-    echo "$DISK_DEVICE.info $DISK_LEFT of $DISK_SIZE Mb available on device /dev/$DISK_DEVICE"
+    echo "$DISK_DEVICE.info $DISK_LEFT of $DISK_SIZE Gb available on device /dev/$DISK_DEVICE"
   done
 
 # -------------------------------------------------------
