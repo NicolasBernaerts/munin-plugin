@@ -118,8 +118,9 @@ else
     *) echo "fan.value U" ;;
   esac
 
-  # read internal case temperature
-  TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\).*$/\1/')
+  # read internal case temperature (second read may de necessary)
+  TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\)$/\1/')
+  [ "${TEMP_CASE}" = "" ] && TEMP_CASE=$(fan_control -g 0 | sed 's/^.*is \([0-9]*\)$/\1/')
   
   # publish case temperature
   echo "case.value ${TEMP_CASE}"
