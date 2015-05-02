@@ -16,11 +16,15 @@
 #  http://bernaerts.dyndns.org/nas/71-dns325-ffp07/319-dns325-dns323-ffp7-munin-node-muninlite
 #
 # 28/04/2015, V1.0 - Creation by N. Bernaerts
+# 02/05/2015, V1.1 - Handle fan speed from user.log
 # ----------------------------------------------
 
 # -------------------------------------------------------
-#  Disk array initialisation
+#  Initialisation
 # -------------------------------------------------------
+
+# log file
+LOG_FILE="/var/log/user.log"
 
 # define warning and critical temperature levels
 CASE_WARNING="45"
@@ -30,14 +34,18 @@ DISK_CRITICAL="50"
 
 # define display value for 3 fan states (stop, low & high)
 FAN_STOP="20"
-FAN_LOW="22"
-FAN_HIGH="24"
+FAN_LOW="24"
+FAN_HIGH="28"
 
 # get nas name
 NAS_IP=$(hostname)
 
+# -------------------------------------------------------
+#  Disk array initialisation
+# -------------------------------------------------------
+
 # load array all disks available on the system
-ARR_DISK=( $(lsblk --nodeps --noheadings | cut -d' ' -f1 | grep "sd.") )
+ARR_DISK=($(lsblk --nodeps --noheadings | cut -d' ' -f1 | grep "sd."))
 
 # -------------------------------------------------------
 #   Configuration call
@@ -49,20 +57,20 @@ if [ "$1" = "config" ]; then
   #    NAS general infos
   # -------------------------------
 
-  echo "host_name ${NAS_IP}"
+  echo "host_name $NAS_IP"
   echo "graph_title Temperature & Fan speed"
   echo "graph_vlabel Degree Celsius"
   echo "graph_category temperature"
-  echo "graph_info Temperature Levels & Fan speed"  
+  echo "graph_info Temperature Levels & Fan speed"
   echo "graph_scale no"
-  echo "graph_args --lower-limit ${FAN_STOP} --upper-limit ${DISK_CRITICAL} --rigid"
+  echo "graph_args --lower-limit $FAN_STOP --upper-limit ${DISK_CRITICAL} --rigid"
 
   # -------------------------------
   #    Fan speed
   # -------------------------------
 
   echo "fan.label Fan"
-  echo "fan.info Fan speed (off:${FAN_STOP}, low:${FAN_LOW}, high:${FAN_HIGH})"
+  echo "fan.info Fan speed (off:$FAN_STOP, low:$FAN_LOW, high:$FAN_HIGH)"
   echo "fan.colour c0c0c0"
   echo "fan.draw AREA"
 
@@ -109,6 +117,13 @@ else
 
   # read fan state
   FAN_STATE=$(fan_control -g 3 | sed 's/^.*is \([0-9]*\).*$/\1/')
+
+  # if fan rotates, get speed from last user.log record
+  if [ "${FAN_STATE}" == "1" ]
+  then
+    FAN_SPEED=$(cat ${LOG_FILE} | grep "Fan Speed" | tail -n 1 - | sed 's/^.*\"\(.*\)\".*$/\1/')
+    [ "${FAN_SPEED}" == "High" ] && FAN_STATE=2
+  fi
 
   # publish fan speed
   case ${FAN_STATE} in
