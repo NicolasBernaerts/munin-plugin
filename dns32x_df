@@ -32,6 +32,7 @@ if [ "$1" = "config" ]; then
   echo "graph_title Disk usage"
   echo "graph_vlabel Percentage"
   echo "graph_category system"
+  echo "graph_scale no"
   echo "graph_args --lower-limit 0 --upper-limit 100"
   echo "graph_info This graph shows the usage level of disks in %"
 
