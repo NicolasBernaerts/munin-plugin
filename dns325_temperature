@@ -53,7 +53,8 @@ if [ "$1" = "config" ]; then
   echo "graph_vlabel Degree Celsius"
   echo "graph_category temperature"
   echo "graph_info Temperature Levels & Fan speed"
-  echo "graph_args --lower-limit $FAN_STOP --rigid"
+  echo "graph_scale no"
+  echo "graph_args --lower-limit $FAN_STOP --upper-limit ${DISK_CRITICAL} --rigid"
 
   # -------------------------------
   #    Fan speed
