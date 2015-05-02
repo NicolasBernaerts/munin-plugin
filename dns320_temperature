@@ -53,8 +53,8 @@ if [ "$1" = "config" ]; then
   echo "graph_title Temperature & Fan speed"
   echo "graph_vlabel Degree Celsius"
   echo "graph_category temperature"
-  echo "graph_info Temperature Levels & Fan speed"
-  echo "graph_args --lower-limit $FAN_STOP --rigid"
+  echo "graph_info Temperature Levels & Fan speed"  echo "graph_scale no"
+  echo "graph_args --lower-limit $FAN_STOP --upper-limit 60 --rigid"
 
   # -------------------------------
   #    Fan speed
