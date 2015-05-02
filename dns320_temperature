@@ -37,7 +37,7 @@ FAN_HIGH="24"
 NAS_IP=$(hostname)
 
 # load array all disks available on the system
-ARR_DISK=($(lsblk --nodeps --noheadings | cut -d' ' -f1 | grep "sd."))
+ARR_DISK=( $(lsblk --nodeps --noheadings | cut -d' ' -f1 | grep "sd.") )
 
 # -------------------------------------------------------
 #   Configuration call
@@ -49,19 +49,20 @@ if [ "$1" = "config" ]; then
   #    NAS general infos
   # -------------------------------
 
-  echo "host_name $NAS_IP"
+  echo "host_name ${NAS_IP}"
   echo "graph_title Temperature & Fan speed"
   echo "graph_vlabel Degree Celsius"
   echo "graph_category temperature"
-  echo "graph_info Temperature Levels & Fan speed"  echo "graph_scale no"
-  echo "graph_args --lower-limit $FAN_STOP --upper-limit $DISK_CRITICAL --rigid"
+  echo "graph_info Temperature Levels & Fan speed"  
+  echo "graph_scale no"
+  echo "graph_args --lower-limit ${FAN_STOP} --upper-limit ${DISK_CRITICAL} --rigid"
 
   # -------------------------------
   #    Fan speed
   # -------------------------------
 
   echo "fan.label Fan"
-  echo "fan.info Fan speed (off:$FAN_STOP, low:$FAN_LOW, high:$FAN_HIGH)"
+  echo "fan.info Fan speed (off:${FAN_STOP}, low:${FAN_LOW}, high:${FAN_HIGH})"
   echo "fan.colour c0c0c0"
   echo "fan.draw AREA"
 
