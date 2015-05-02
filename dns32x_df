@@ -1,6 +1,7 @@
 #!/ffp/bin/bash
 # ----------------------------------------------
-# Muninlite plugin for DNS-323 & DNS-325
+# Muninlite plugin for 
+#  DNS-320, DNS-323 & DNS-325
 #
 # Get disks occupation level in %
 #
@@ -19,7 +20,7 @@ IFS='
 '
 
 # list available drives (user disks are under HD_x2)
-ARR_DISK=(`df | grep "HD..2" | sed 's/ \+/|/g'`)
+ARR_DISK=( $(df | grep "HD..2" | sed 's/ \+/|/g') )
 
 # -------------------------------------------------------
 # Handle configuration call
@@ -38,12 +39,12 @@ if [ "$1" = "config" ]; then
   for DISK in "${ARR_DISK[@]}"
   do
     # retrieve disk information
-    DISK_DEVICE=`echo $DISK | cut -d'|' -f1 | sed 's/\/dev\///'`
-    DISK_SIZE=`echo $DISK | cut -d'|' -f2`
-    DISK_SIZE=`expr $DISK_SIZE / 1024`
-    DISK_LEFT=`echo $DISK | cut -d'|' -f4`
-    DISK_LEFT=`expr $DISK_LEFT / 1024`
-    DISK_MOUNT=`echo $DISK | cut -d'|' -f6`
+    DISK_DEVICE=$(echo $DISK | cut -d'|' -f1 | sed 's/\/dev\///')
+    DISK_SIZE=$(echo $DISK | cut -d'|' -f2)
+    DISK_SIZE=$(expr $DISK_SIZE / 1024)
+    DISK_LEFT=$(echo $DISK | cut -d'|' -f4)
+    DISK_LEFT=$(expr $DISK_LEFT / 1024)
+    DISK_MOUNT=$(echo $DISK | cut -d'|' -f6)
 
     # display disk information
     echo "$DISK_DEVICE.label $DISK_MOUNT"
@@ -64,8 +65,8 @@ else
   for DISK in "${ARR_DISK[@]}"
   do
     # retrieve disk information
-    DISK_DEVICE=`echo $DISK | cut -d'|' -f1 | sed 's/\/dev\///'`
-    DISK_PERCENT=`echo $DISK | cut -d'|' -f5 | sed 's/%//'`
+    DISK_DEVICE=$(echo $DISK | cut -d'|' -f1 | sed 's/\/dev\///')
+    DISK_PERCENT=$(echo $DISK | cut -d'|' -f5 | sed 's/%//')
 
     # display disk information
     echo "$DISK_DEVICE.value $DISK_PERCENT"
