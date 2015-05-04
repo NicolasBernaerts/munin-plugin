@@ -15,6 +15,7 @@
 #  http://bernaerts.dyndns.org/nas/71-dns325-ffp07/319-dns325-dns323-ffp7-munin-node-muninlite
 #
 # 28/04/2015, V1.0 - Creation by N. Bernaerts
+# 02/05/2015, V1.1 - Handle error where temperature case is read as 0
 # ----------------------------------------------
 
 # -------------------------------------------------------
@@ -106,9 +107,10 @@ if [ "$1" = "config" ]; then
 
 else
 
-  # read internal case temperature
+  # read internal case temperature (sometimes reads 0 ...)
   TEMP_CASE=$(temperature g 0 | sed 's/^.* = \([0-9]*\).*$/\1/g')
-
+  [ "${TEMP_CASE}" = "0" ] && TEMP_CASE="U"
+  
   # publish case temperature
   echo "case.value ${TEMP_CASE}"
 
