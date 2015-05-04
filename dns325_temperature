@@ -29,8 +29,8 @@ DISK_CRITICAL="50"
 
 # define display value for 3 fan states (stop, low & high)
 FAN_STOP="20"
-FAN_LOW="22"
-FAN_HIGH="24"
+FAN_LOW="24"
+FAN_HIGH="28"
 
 # get nas name
 NAS_IP=$(hostname)
