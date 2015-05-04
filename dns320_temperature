@@ -17,6 +17,7 @@
 #
 # 28/04/2015, V1.0 - Creation by N. Bernaerts
 # 02/05/2015, V1.1 - Handle fan speed from user.log
+# 03/05/2015, V1.2 - Handle error where temperature case is read as 0
 # ----------------------------------------------
 
 # -------------------------------------------------------
@@ -115,8 +116,9 @@ if [ "$1" = "config" ]; then
 
 else
 
-  # read internal case temperature
+  # read internal case temperature (handle read errors reporting 0)
   TEMP_CASE=$(fan_control -g 0 | grep " is " | sed 's/^.*is \([0-9]*\)$/\1/')
+  [ "${TEMP_CASE}" = "0" ] && TEMP_CASE="U"
 
   # publish case temperature
   echo "case.value ${TEMP_CASE}"
