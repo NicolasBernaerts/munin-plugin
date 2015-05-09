@@ -35,36 +35,33 @@ if [ "$1" = "config" ]; then
   # get UPS connection hostname
   echo "host_name $NAS_IP"
 
-  # capacity graph  
-  echo "multigraph capacity"
-  echo "graph_title UPS Battery Level"
+  # graph  description
+  echo "graph_title UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}"
   echo "graph_category power"
-  echo "graph_info This graph shows UPS battery charge in %"
+  echo "graph_info This graph shows UPS battery charge and load"
   echo "graph_args --upper-limit 100 -l 0 --rigid"
-  echo "capacity.info UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}, battery ${UPS_BATTERY}"
+
+  # battery capacity
+  echo "capacity.info Battery ${UPS_BATTERY} of ${UPS_POWER} VA"
   echo "capacity.label Battery level (%)"
   echo "capacity.draw AREA"
   [ "${UPS_STATUS}" = "OL" ] && echo "capacity.colour 008000" || echo "capacity.colour FFA500"
   echo "capacity.min 0"
   echo "capacity.max 100"
-  echo "runtime.info UPS runtime in minutes"
+
+  # input power
+  echo "power.info Input power"
+  echo "power.label Input power (%)"
+  echo "power.draw LINE2"
+  echo "power.colour 0000FF"
+  echo "power.min 0"
+
+  # battery runtime
+  echo "runtime.info UPS runtime if power failure"
   echo "runtime.label Runtime (mn)"
   echo "runtime.draw LINE2"
   echo "runtime.colour FF0000"
   echo "runtime.min 0"
-
-  # input power graph
-  echo "multigraph power"
-  echo "graph_title UPS Input Power"
-  echo "graph_vlabel Power (W)"
-  echo "graph_category power"
-  echo "graph_info This graph shows UPS input power in W"
-  echo "graph_args -l 0"
-  echo "power.info UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}, capacity ${UPS_POWER} VA"
-  echo "power.label Input power (W)"
-  echo "power.draw LINE2"
-  echo "power.colour 0000FF"
-  echo "power.min 0"
 
 # -------------------------------------------------------
 #    Normal call : Read Data
@@ -78,12 +75,8 @@ else
   UPS_RUNTIME=$(($(upsc usbhid battery.runtime) / 60))
 
   # publish battery level and runtime
-  echo "multigraph capacity"
   echo "capacity.value ${UPS_BATTERY}"
-  echo "runtime.value ${UPS_RUNTIME}"
-
-  # publish power output
-  echo "multigraph power"
   echo "power.value ${UPS_LOAD}"
+  echo "runtime.value ${UPS_RUNTIME}"
 
 fi
