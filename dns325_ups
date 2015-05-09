@@ -1,0 +1,89 @@
+#!/ffp/bin/bash 
+# ----------------------------------------------
+# Muninlite plugin for DNS-325
+# 
+# Plugin to supervise UPS device
+#  connected to DNS-325 USB port
+# Tested with EATON 3S 550 UPS
+#
+# To install muninlite on DNS-325, please check :
+#  http://bernaerts.dyndns.org/nas/71-dns325-ffp07/319-dns325-dns323-ffp7-munin-node-muninlite
+#
+# 07/05/2015, V1.0 - Creation by N. Bernaerts
+# ----------------------------------------------
+
+# -------------------------------------------------------
+#   Initialisation
+# -------------------------------------------------------
+
+# get nas name
+NAS_IP=$(hostname)
+
+# -------------------------------------------------------
+#   Configuration call
+# -------------------------------------------------------
+
+if [ "$1" = "config" ]; then
+
+  # read UPS data
+  UPS_MANUFACTURER=$(upsc usbhid ups.mfr)
+  UPS_MODEL=$(upsc usbhid ups.model)
+  UPS_POWER=$(upsc usbhid ups.power.nominal)
+  UPS_BATTERY=$(upsc usbhid battery.type)
+  UPS_STATUS=$(upsc usbhid ups.status | cut -d' ' -f1)
+
+  # get UPS connection hostname
+  echo "host_name $NAS_IP"
+
+  # capacity graph  
+  echo "multigraph capacity"
+  echo "graph_title UPS Battery Level"
+  echo "graph_category power"
+  echo "graph_info This graph shows UPS battery charge in %"
+  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "capacity.info UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}, battery ${UPS_BATTERY}"
+  echo "capacity.label Battery level (%)"
+  echo "capacity.draw AREA"
+  [ "${UPS_STATUS}" = "OL" ] && echo "capacity.colour 008000" || echo "capacity.colour FFA500"
+  echo "capacity.min 0"
+  echo "capacity.max 100"
+  echo "runtime.info UPS runtime in minutes"
+  echo "runtime.label Runtime (mn)"
+  echo "runtime.draw LINE2"
+  echo "runtime.colour FF0000"
+  echo "runtime.min 0"
+
+  # input power graph
+  echo "multigraph power"
+  echo "graph_title UPS Input Power"
+  echo "graph_vlabel Power (W)"
+  echo "graph_category power"
+  echo "graph_info This graph shows UPS input power in W"
+  echo "graph_args -l 0"
+  echo "power.info UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}, capacity ${UPS_POWER} VA"
+  echo "power.label Input power (W)"
+  echo "power.draw LINE2"
+  echo "power.colour 0000FF"
+  echo "power.min 0"
+
+# -------------------------------------------------------
+#    Normal call : Read Data
+# -------------------------------------------------------
+
+else
+
+  # read UPS data
+  UPS_BATTERY=$(upsc usbhid battery.charge)
+  UPS_LOAD=$(upsc usbhid ups.load)
+  UPS_RUNTIME=$(($(upsc usbhid battery.runtime) / 60))
+
+  # publish battery level and runtime
+  echo "multigraph capacity"
+  echo "capacity.value ${UPS_BATTERY}"
+  echo "runtime.value ${UPS_RUNTIME}"
+
+  # publish power output
+  echo "multigraph power"
+  echo "power.value ${UPS_LOAD}"
+
+fi
