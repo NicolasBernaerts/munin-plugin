@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # -*- sh -*-
 # -------------------------------------------------------
 #  Munin node script
@@ -96,7 +96,7 @@ MIB_LEVEL_YELLOW="1.3.6.1.2.1.43.11.1.1.9.1.4"
 # -------------------------------------------------------
 
 # get printer name from script name
-PRINTER_IP=`basename $0 | cut -d'_' -f2`
+PRINTER_IP=$(basename $0 | cut -d'_' -f2)
 
 # -------------------------------------------------------
 #  Read all MIBs data from the printer
@@ -105,20 +105,20 @@ PRINTER_IP=`basename $0 | cut -d'_' -f2`
 # if not in autoconf process, read SNMP data
 if [ "$1" != "snmpconf" ]; then 
   # read SNMP MIB
-  MIB_RESULT=`snmpget -v1 -One -c public $PRINTER_IP $MIB_NAME \
+  MIB_RESULT=$(snmpget -v1 -One -c public $PRINTER_IP $MIB_NAME \
    $MIB_MAX_BLACK $MIB_MAX_CYAN $MIB_MAX_MAGENTA $MIB_MAX_YELLOW \
-   $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW`
+   $MIB_LEVEL_BLACK $MIB_LEVEL_CYAN $MIB_LEVEL_MAGENTA $MIB_LEVEL_YELLOW)
 
   # get values from result
-  PRINTER_NAME=`echo $MIB_RESULT | sed 's/.*'$MIB_NAME'[^"]*"\([^"]*\).*/\1/g'`
-  MAX_BLACK=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  MAX_CYAN=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  MAX_MAGENTA=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  MAX_YELLOW=`echo $MIB_RESULT | sed 's/.*'$MIB_MAX_YELLOW'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  LEVEL_BLACK=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  LEVEL_CYAN=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  LEVEL_MAGENTA=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g'`
-  LEVEL_YELLOW=`echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_YELLOW'[ =:A-Z]*\([0-9]*\).*/\1/g'`
+  PRINTER_NAME=$(echo $MIB_RESULT | sed 's/.*'$MIB_NAME'[^"]*"\([^"]*\).*/\1/g')
+  MAX_BLACK=$(echo $MIB_RESULT | sed 's/.*'$MIB_MAX_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  MAX_CYAN=$(echo $MIB_RESULT | sed 's/.*'$MIB_MAX_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  MAX_MAGENTA=$(echo $MIB_RESULT | sed 's/.*'$MIB_MAX_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  MAX_YELLOW=$(echo $MIB_RESULT | sed 's/.*'$MIB_MAX_YELLOW'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  LEVEL_BLACK=$(echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_BLACK'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  LEVEL_CYAN=$(echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_CYAN'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  LEVEL_MAGENTA=$(echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_MAGENTA'[ =:A-Z]*\([0-9]*\).*/\1/g')
+  LEVEL_YELLOW=$(echo $MIB_RESULT | sed 's/.*'$MIB_LEVEL_YELLOW'[ =:A-Z]*\([0-9]*\).*/\1/g')
 fi
 
 # -------------------------------------------------------
