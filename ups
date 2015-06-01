@@ -13,8 +13,9 @@
 #   Initialisation
 # -------------------------------------------------------
 
-# set name you've configured in /etc/nut/ups.conf
-UPS_NAME="eaton"
+# name you've configured in /etc/nut/ups.conf
+# plugin name must be ups_name
+UPS_NAME=$(basename $0 | cut -d'_' -f2)
 
 # -------------------------------------------------------
 #   Configuration call
