@@ -3,11 +3,13 @@
 # -------------------------------------------------------
 #  Munin node script
 #
-#  Monitor cycle station status
-#
-#  Plugin name cycle_NetworkName_StationNumber_status
+#  Monitor cycle station status in JCDecaux network
+#  (Paris, Nantes, ...)
 #
 #  Needs curl and jq
+#
+#  Plugin name should be following this convention
+#      cycle_NetworkName_StationNumber_status
 #
 #  Parameters : 
 #    $1 : none, "autoconf" or "config"
