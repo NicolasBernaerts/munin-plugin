@@ -1,0 +1,144 @@
+#!/bin/bash
+# -*- sh -*-
+# -------------------------------------------------------
+#  Munin node script
+#
+#  Monitor cycle station status
+#
+#  Plugin name cycle_NetworkName_StationNumber_status
+#
+#  Needs curl and jq
+#
+#  Parameters : 
+#    $1 : none, "autoconf" or "config"
+#
+#  06/09/2015, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+
+: << =cut
+
+=head1 NAME
+
+cycle__status - Munin plugin to monitor the cycle station status in JCDecaux network
+
+=head1 APPLICABLE SYSTEMS
+
+Any Linux computer connected to internet
+
+=head1 CONFIGURATION
+
+No configuration needed
+
+=head1 INTERPRETATION
+
+Number of cycles and cycle stands available in a JCDecaux network station
+
+=head1 MIB INFORMATION
+
+No specific information
+
+=head1 MAGIC MARKERS
+
+ #%# family=auto
+ #%# capabilities=autoconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2015 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+# -------------------------------------------------------
+#  Parameters
+# -------------------------------------------------------
+
+# API server URL
+URL_BASE="https://api.jcdecaux.com/vls/v1/stations/"
+
+# personnal key (to get from developer.jcdecaux.com)
+API_KEY="YourDeveloperKey"
+
+# network name and station number
+NETWORK_NAME=$(basename $0 | cut -d'_' -f2)
+STATION_INDEX=$(basename $0 | cut -d'_' -f3)
+
+# -------------------------------------------------------
+#  Read station data
+# -------------------------------------------------------
+
+# generate URL
+URL_FULL="${URL_BASE}${STATION_INDEX}?contract=${NETWORK_NAME}&apiKey=${API_KEY}"
+
+# query server
+RESULT=$(curl --silent --compressed "${URL_FULL}")
+
+# -------------------------------------------------------
+#  Handle autoconf call
+# -------------------------------------------------------
+
+if [ "$1" = "autoconf" ]; then
+  echo "yes"
+
+# -------------------------------------------------------
+#  Handle config call
+# -------------------------------------------------------
+
+elif [ "$1" = "config" ]; then
+  # get station name
+  STATION_NBR=$(echo ${RESULT} | jq '.number')
+  TOTAL_NBR=$(echo ${RESULT} | jq '.bike_stands')
+  STATION_NAME=$(echo ${RESULT} | jq '.name')
+  STATION_NAME=$(echo ${STATION_NAME:1:-1} | cut -d'-' -f2- | xargs)
+
+  # display graph characteristics
+  echo "graph_title ${NETWORK_NAME} - (${STATION_NBR}) ${STATION_NAME}"
+  echo "graph_vlabel Units"
+  echo "graph_args --lower-limit 0 --upper-limit ${TOTAL_NBR} --rigid"
+  echo "graph_category cycle"
+  echo "graph_info Monitor available cycles and cycle stands"
+
+  # display configuration
+  echo "cycle.label Cycles"
+  echo "cycle.info Number of cycles available"
+  echo "cycle.draw AREA"
+  echo "cycle.colour 00ff00"
+  echo "stand.label Cycle stands"
+  echo "stand.info Number of cycle stands available"
+  echo "stand.draw STACK"
+  echo "stand.colour 0000ff"
+  echo "brokn.label Broken"
+  echo "brokn.info Number of broken cycles or stands"
+  echo "brokn.draw STACK"
+  echo "brokn.colour ff0000"
+
+# -------------------------------------------------------
+#  Handle normal call to read values
+# -------------------------------------------------------
+
+else 
+  # get cycle and cycle stands available
+  TOTAL_NBR=$(echo ${RESULT} | jq '.bike_stands')
+  CYCLE_NBR=$(echo ${RESULT} | jq '.available_bikes')
+  STAND_NBR=$(echo ${RESULT} | jq '.available_bike_stands')
+  BROKN_NBR=$(( TOTAL_NBR - CYCLE_NBR - STAND_NBR ))
+
+  # display result
+  echo "cycle.value ${CYCLE_NBR}"
+  echo "stand.value ${STAND_NBR}"
+  echo "brokn.value ${BROKN_NBR}"
+fi
+
+# end
+exit 0
