@@ -70,7 +70,7 @@ GPLv2.
 URL_BASE="https://api.jcdecaux.com/vls/v1/stations"
 
 # personnal key (to get from developer.jcdecaux.com)
-API_KEY="99e229022a329f3c13320d3f06096aaa7bacf257"
+API_KEY="YourDeveloperKey"
 
 # list of station to display
 ARR_STATION=(37 38 47 56)
