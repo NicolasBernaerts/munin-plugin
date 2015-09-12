@@ -12,7 +12,7 @@
 #  Needs curl and jq
 #
 #  Parameters : 
-#    $1 : none or "config"
+#    $1 : none, "autoconf" or "config"
 #
 #  06/09/2015, V1.0 - Creation by N. Bernaerts
 # -------------------------------------------------------
