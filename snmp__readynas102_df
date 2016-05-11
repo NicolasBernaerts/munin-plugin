@@ -1,0 +1,160 @@
+#!/bin/sh
+# -*- sh -*-
+# -------------------------------------------------------
+# Munin node script
+#
+# Monitor disk volume usage of a ReadyNAS 102
+#
+# Used in http://bernaerts.dyndns.org/nas/...
+#
+# Parameters :
+#   $1 : none, "snmpconf" or "config"
+#
+# 09/05/2016, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+
+: << =cut
+
+=head1 NAME
+
+snmp__readynas102_df - Munin plugin to monitor disk volume usage of ReadyNAS 102
+
+=head1 APPLICABLE SYSTEMS
+
+Any ReadyNAS 102 with SNMP enabled
+
+=head1 CONFIGURATION
+
+ReadyNAS 102 must have SNMP enabled.
+This plugin uses public community.
+
+=head1 INTERPRETATION
+
+The volume usage and capacity in Gb.
+
+=head1 MIB INFORMATION
+
+This plugin requires that ReadyNAS MIB has been previoulsy declared on the server.
+This can be done with following command :
+# wget --no-check-certificate -O /usr/share/snmp/mibs/READYNASOS-MIB.txt https://YourNASIP/READYNASOS-MIB.txt
+
+=head1 MAGIC MARKERS
+
+  #%# family=snmpauto
+  #%# capabilities=snmpconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2016 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+
+# -------------------------------------------------------
+# Parameters
+# -------------------------------------------------------
+
+# volume warning and critical levels (in %)
+PERCENT_WARNING=90
+PERCENT_CRITICAL=98
+
+# -------------------------------------------------------
+# Configure all MIBs adresses
+# -------------------------------------------------------
+
+# declare MIB
+MIB_VOL_NAME="READYNASOS-MIB::volumeName.1"
+MIB_VOL_RAID="READYNASOS-MIB::volumeRAIDLevel.1"
+MIB_VOL_STATE="READYNASOS-MIB::volumeStatus.1"
+MIB_VOL_SIZE="READYNASOS-MIB::volumeSize.1"
+MIB_VOL_FREE="READYNASOS-MIB::volumeFreeSpace.1"
+
+# -------------------------------------------------------
+# Get NAS address
+# -------------------------------------------------------
+
+# get nas name from script name
+NAS_IP=`basename $0 | cut -d'_' -f2`
+
+# -------------------------------------------------------
+# Handle SNMP autoconf call
+# -------------------------------------------------------
+
+# snmpconf : announce required MIBs
+if [ "$1" = "snmpconf" ]; then
+  echo "require ${MIB_VOL_NAME}"
+  echo "require ${MIB_VOL_RAID}"
+  echo "require ${MIB_VOL_STATE}"
+  echo "require ${MIB_VOL_SIZE}"
+  echo "require ${MIB_VOL_FREE}"
+
+# -------------------------------------------------------
+# Handle configuration call
+# -------------------------------------------------------
+
+# config : read node configuration
+elif [ "$1" = "config" ]; then
+  # read SNMP MIB
+  MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_VOL_NAME} ${MIB_VOL_RAID} ${MIB_VOL_STATE} ${MIB_VOL_SIZE} ${MIB_VOL_FREE})
+
+  # get values from result
+  VOL_NAME=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_NAME}'[^"]*"\([^"]*\)".*$/\1/g')
+  VOL_RAID=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_RAID}'[^"]*"\([^"]*\)".*$/\1/g')
+  VOL_STATE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_STATE}'[^"]*"\([^"]*\)".*$/\1/g' | tr '[:upper:]' '[:lower:]')
+  VOL_SIZE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_SIZE}'[^0-9]*\([0-9]*\).*$/\1/g')
+  VOL_FREE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_FREE}'[^0-9]*\([0-9]*\).*$/\1/g')
+
+  # convert size in Gb
+  VOL_SIZE=$((VOL_SIZE/1024))
+  VOL_FREE=$((VOL_FREE/1024))
+
+  # NAS general infos
+  echo "host_name ${NAS_IP}"
+  echo "graph_title Volume size (${NAS_IP})"
+  echo "graph_vlabel Percentage"
+  echo "graph_category system"
+  echo "graph_info This graph shows the usage level of volume in %"
+  echo "graph_args --lower-limit 0 --upper-limit 100 --rigid"
+
+  # volume
+  echo "vol.label ${VOL_NAME} (${VOL_SIZE} Gb)"
+  echo "vol.colour 0000ff"
+  echo "vol.info ${VOL_FREE} Gb left, volume ${VOL_STATE}, raid ${VOL_RAID}"
+  echo "vol.warning :${PERCENT_WARNING}"
+  echo "vol.critical :${PERCENT_CRITICAL}"
+
+# -------------------------------------------------------
+# Handle data read call
+# -------------------------------------------------------
+
+# normal case : read RPM and temperatures
+else
+  # read SNMP MIB
+  MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_VOL_SIZE} ${MIB_VOL_FREE})
+
+  # get values from result
+  VOL_SIZE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_SIZE}'[^0-9]*\([0-9]*\).*$/\1/g')
+  VOL_FREE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_VOL_FREE}'[^0-9]*\([0-9]*\).*$/\1/g')
+
+  # calculate percentage of disk used
+  VOL_USED=$((VOL_SIZE-VOL_FREE))
+  PERCENT_USED=$((100*VOL_USED/VOL_SIZE))
+
+  # publish level
+  echo "vol.value ${PERCENT_USED}"
+fi
+
+# exit
+exit 0
