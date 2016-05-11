@@ -171,20 +171,18 @@ elif [ "$1" = "config" ]; then
   echo "cpu.info CPU tempterature"
   echo "cpu.warning :${CPU_WARNING}"
   echo "cpu.critical :${CPU_CRITICAL}"
-
-
+  
   # disk1 temperature
-  echo "disk1.label ${DISK1_CAPA} Gb (${DISK1_STATE})"
+  echo "disk1.label Disk 1 (${DISK1_STATE})"
   echo "disk1.colour 0000ff"
-  echo "disk1.info model ${DISK1_MODEL}, s/n ${DISK1_SERIAL}"
+  echo "disk1.info ${DISK1_CAPA} Gb, model ${DISK1_MODEL}, s/n ${DISK1_SERIAL}"
   echo "disk1.warning :${DISK_WARNING}"
   echo "disk1.critical :${DISK_CRITICAL}"
 
-
   # disk2 temperature
-  echo "disk2.label ${DISK2_CAPA} Gb (${DISK2_STATE})"
+  echo "disk2.label Disk 2 (${DISK2_STATE})"
   echo "disk2.colour ff00ff"
-  echo "disk2.info model ${DISK2_MODEL}, s/n ${DISK2_SERIAL}"
+  echo "disk2.info ${DISK2_CAPA} Gb, model ${DISK2_MODEL}, s/n ${DISK2_SERIAL}"
   echo "disk2.warning :${DISK_WARNING}"
   echo "disk2.critical :${DISK_CRITICAL}"
 
