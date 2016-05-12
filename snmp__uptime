@@ -3,7 +3,7 @@
 # -------------------------------------------------------
 # Munin node script
 #
-# Monitor uptime of a ReadyNAS 102
+# Monitor uptime of any SNMP device
 #
 # Used in http://bernaerts.dyndns.org/nas/...
 #
@@ -17,15 +17,15 @@
 
 =head1 NAME
 
-snmp__readynas102_df - Munin plugin to monitor uptime of ReadyNAS 102
+snmp__uptime - Munin plugin to monitor uptime of any SNMP enabled device
 
 =head1 APPLICABLE SYSTEMS
 
-Any ReadyNAS 102 with SNMP enabled
+Any device with SNMP enabled
 
 =head1 CONFIGURATION
 
-ReadyNAS 102 must have SNMP enabled.
+device must have SNMP enabled.
 This plugin uses public community.
 
 =head1 INTERPRETATION
@@ -65,7 +65,7 @@ GPLv2.
 # -------------------------------------------------------
 
 # declare MIB
-MIB_UPTIME="1.3.6.1.2.1.1.3 "
+MIB_UPTIME="1.3.6.1.2.1.1.3.0"
 
 # -------------------------------------------------------
 # Get NAS address
@@ -108,7 +108,7 @@ else
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_UPTIME})
 
   # get values from result (in 100th/second)
-  UPTIME=$(echo ${MIB_UPTIME} | sed 's/^.*'${MIB_UPTIME}'[^0-9]*\([0-9]*\).*$/\1/g')
+  UPTIME=$(echo ${MIB_UPTIME} | sed 's/^.*(\([0-9]*\)).*$/\1/g')
 
   # publish level
   echo "uptime.value ${UPTIME}"
