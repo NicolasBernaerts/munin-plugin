@@ -6,6 +6,10 @@
 #
 # Tested with EATON 3S 550 UPS
 #
+#  Must be declared like an SMTP plugin with following 
+#   plugin name format : ups_upsname 
+#  where upsname is the UPS name for upsc
+
 # 31/05/2015, V1.0 - Creation by N. Bernaerts
 # ----------------------------------------------
 
