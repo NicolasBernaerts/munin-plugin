@@ -34,9 +34,6 @@ if [ "$1" = "config" ]; then
   UPS_BATTERY=$(upsc ${UPS_NAME}@localhost battery.type)
   UPS_STATUS=$(upsc ${UPS_NAME}@localhost ups.status | cut -d' ' -f1)
 
-  # get UPS connection hostname
-  echo "host_name $NAS_IP"
-
   # graph  description
   echo "graph_title UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}"
   echo "graph_category power"
