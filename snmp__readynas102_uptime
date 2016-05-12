@@ -34,9 +34,7 @@ Uptime in days.
 
 =head1 MIB INFORMATION
 
-This plugin requires that ReadyNAS MIB has been previoulsy declared on the server.
-This can be done with following command :
-# wget --no-check-certificate -O /usr/share/snmp/mibs/READYNASOS-MIB.txt https://YourNASIP/READYNASOS-MIB.txt
+No specific need
 
 =head1 MAGIC MARKERS
 
@@ -67,7 +65,7 @@ GPLv2.
 # -------------------------------------------------------
 
 # declare MIB
-MIB_UPTIME="DISMAN-EVENT-MIB::sysUpTimeInstance"
+MIB_UPTIME="1.3.6.1.2.1.1.3 "
 
 # -------------------------------------------------------
 # Get NAS address
@@ -81,7 +79,8 @@ NAS_IP=$(basename $0 | cut -d'_' -f2)
 # -------------------------------------------------------
 
 # snmpconf : announce required MIBs
-if [ "$1" = "snmpconf" ]; then
+if [ "$1" = "snmpconf" ];
+then
   echo "require ${MIB_UPTIME}"
 
 # -------------------------------------------------------
@@ -96,7 +95,7 @@ elif [ "$1" = "config" ]; then
   echo "graph_category system"
   echo "uptime.label uptime"
   echo "uptime.draw AREA"
-  echo "uptime.cdef uptime,86400,/"
+  echo "uptime.cdef uptime,8640000,/"
 
 # -------------------------------------------------------
 # Handle data read call
@@ -107,7 +106,7 @@ else
   # read SNMP MIB
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_UPTIME})
 
-  # get values from result
+  # get values from result (in 100th/second)
   UPTIME=$(echo ${MIB_UPTIME} | sed 's/^.*'${MIB_UPTIME}'[^0-9]*\([0-9]*\).*$/\1/g')
 
   # publish level
