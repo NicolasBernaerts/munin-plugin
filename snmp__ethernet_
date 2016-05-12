@@ -80,9 +80,9 @@ RECV_COLOR="0000ff"
 # -------------------------------------------------------
 
 # get device data from script name
-NETWORK_IP=`basename $0 | cut -d'_' -f2`
-NETWORK_TYPE=`basename $0 | cut -d'_' -f3`
-NETWORK_IF=`basename $0 | cut -d'_' -f4`
+NETWORK_IP=$(basename $0 | cut -d'_' -f2)
+NETWORK_TYPE=$(basename $0 | cut -d'_' -f3)
+NETWORK_IF=$(basename $0 | cut -d'_' -f4)
 
 # define temporary file to store data
 IF_FILE=$TMP_DIR/munin-$NETWORK_IP-$NETWORK_TYPE-$NETWORK_IF.values
@@ -101,18 +101,18 @@ MIB_IF_STATUS="1.3.6.1.2.1.2.2.1.8.$NETWORK_IF"
 # -------------------------------------------------------
 
 # get current date (in seconds)
-IF_DATE=`date +%s`
+IF_DATE=$(date +%s)
 
 # if not in autoconf process, read SNMP data
 if [ "$1" != "snmpconf" ]; then 
   # read SNMP MIB
-  MIB_RESULT=`snmpget -v1 -One -c public $NETWORK_IP $MIB_IF_NAME $MIB_IF_STATUS $MIB_IF_RECV $MIB_IF_SEND`
+  MIB_RESULT=$(snmpget -v1 -One -c public $NETWORK_IP $MIB_IF_NAME $MIB_IF_STATUS $MIB_IF_RECV $MIB_IF_SEND)
 
   # get all needed data from SNMP MIB
-  IF_NAME=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_NAME'[^"]*"\([^"]*\).*/\1/g'`
-  IF_STATUS=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_STATUS'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g'`
-  IF_RECV=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_RECV'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g'`
-  IF_SEND=`echo $MIB_RESULT | sed 's/.*'$MIB_IF_SEND'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g'`
+  IF_NAME=$(echo $MIB_RESULT | sed 's/.*'$MIB_IF_NAME'[^"]*"\([^"]*\).*/\1/g')
+  IF_STATUS=$(echo $MIB_RESULT | sed 's/.*'$MIB_IF_STATUS'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g')
+  IF_RECV=$(echo $MIB_RESULT | sed 's/.*'$MIB_IF_RECV'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g')
+  IF_SEND=$(echo $MIB_RESULT | sed 's/.*'$MIB_IF_SEND'[ =A-Za-z0-9]*: \([0-9]*\).*/\1/g')
 fi
 
 # -------------------------------------------------------
@@ -191,9 +191,9 @@ else
   # else data rate can be computed
   else
     # read previous data
-    PREV_DATE=`cat $IF_FILE | grep "Date" | cut -d':' -f2`
-    PREV_SEND=`cat $IF_FILE | grep "Send" | cut -d':' -f2`
-    PREV_RECV=`cat $IF_FILE | grep "Recv" | cut -d':' -f2`
+    PREV_DATE=$(cat $IF_FILE | grep "Date" | cut -d':' -f2)
+    PREV_SEND=$(cat $IF_FILE | grep "Send" | cut -d':' -f2)
+    PREV_RECV=$(cat $IF_FILE | grep "Recv" | cut -d':' -f2)
 
     # calculate data increase
     DELTA_DATE=$((IF_DATE - PREV_DATE))
