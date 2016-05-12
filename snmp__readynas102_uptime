@@ -88,7 +88,8 @@ then
 # -------------------------------------------------------
 
 # config : read node configuration
-elif [ "$1" = "config" ]; then
+elif [ "$1" = "config" ];
+then
   echo "graph_title Uptime"
   echo "graph_args --base 1000 -l 0 "
   echo "graph_vlabel uptime in days"
