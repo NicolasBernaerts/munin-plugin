@@ -108,7 +108,7 @@ else
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_UPTIME})
 
   # get values from result (in 100th/second)
-  UPTIME=$(echo ${MIB_UPTIME} | sed 's/^.*(\([0-9]*\)).*$/\1/g')
+  UPTIME=$(echo ${MIB_RESULT} | sed 's/^.*(\([0-9]*\)).*$/\1/g')
 
   # publish level
   echo "uptime.value ${UPTIME}"
