@@ -7,6 +7,10 @@
 #
 # Used in http://bernaerts.dyndns.org/nas/...
 #
+# Script name format should be :
+#   snmp_HostName_ups
+#   snmp_HostName_PortNumber_ups
+#
 # Parameters :
 #   $1 : none, "snmpconf" or "config"
 #
@@ -17,7 +21,7 @@
 
 =head1 NAME
 
-snmp__readynas_ups - Munin plugin to monitor UPS state when USB connected to a ReadyNAS
+snmp__ups - Munin plugin to monitor UPS state when USB connected to any SNMP extended device.
 
 =head1 APPLICABLE SYSTEMS
 
@@ -77,11 +81,15 @@ MIB_BATTERY_CHARGE="NET-SNMP-EXTEND-MIB::nsExtendOutputFull.\"battery.charge\""
 MIB_BATTERY_RUNTIME="NET-SNMP-EXTEND-MIB::nsExtendOutputFull.\"battery.runtime\""
 
 # -------------------------------------------------------
-# Get NAS address
+# Get NAS address and port
 # -------------------------------------------------------
 
-# get nas name from script name
-NAS_IP=$(basename $0 | cut -d'_' -f2)
+# get NAS hostname and port from script name
+NAS_HOST=$(basename $0 | cut -d'_' -f2)
+NAS_PORT=$(( $(basename $0 | cut -d'_' -f3) ))
+
+# set IP according to hostname and port
+[ "${NAS_PORT}" = "0" ] && NAS_IP="${NAS_HOST}" || NAS_IP="${NAS_HOST}:${NAS_PORT}"
 
 # -------------------------------------------------------
 #   Handle SNMP snmpconf call
@@ -117,7 +125,7 @@ then
   UPS_BATTERY=$(echo ${MIB_RESULT} | sed 's/^.*battery.type = STRING: \(.*\)$/\1/g')
 
   # get UPS connection hostname
-  echo "host_name $NAS_IP"
+  echo "host_name $NAS_HOST"
 
   # graph  description
   echo "graph_title UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}"
