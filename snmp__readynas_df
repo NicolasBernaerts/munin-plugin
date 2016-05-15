@@ -90,11 +90,12 @@ MIB_VOL_FREE="READYNASOS-MIB::volumeFreeSpace.1"
 NAS_IP=$(basename $0 | cut -d'_' -f2)
 
 # -------------------------------------------------------
-# Handle SNMP autoconf call
+#   Handle SNMP snmpconf call
+#   Announce required MIBs
 # -------------------------------------------------------
+if [ "$1" = "snmpconf" ]; 
+then
 
-# snmpconf : announce required MIBs
-if [ "$1" = "snmpconf" ]; then
   echo "require ${MIB_VOL_NAME}"
   echo "require ${MIB_VOL_RAID}"
   echo "require ${MIB_VOL_STATE}"
@@ -102,11 +103,12 @@ if [ "$1" = "snmpconf" ]; then
   echo "require ${MIB_VOL_FREE}"
 
 # -------------------------------------------------------
-# Handle configuration call
+#   Handle SNMP config call
+#   Publish plugin configuration
 # -------------------------------------------------------
+elif [ "$1" = "config" ]; 
+then
 
-# config : read node configuration
-elif [ "$1" = "config" ]; then
   # read SNMP MIB
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_VOL_NAME} ${MIB_VOL_RAID} ${MIB_VOL_STATE} ${MIB_VOL_SIZE} ${MIB_VOL_FREE})
 
@@ -137,11 +139,11 @@ elif [ "$1" = "config" ]; then
   echo "vol.critical :${PERCENT_CRITICAL}"
 
 # -------------------------------------------------------
-# Handle data read call
+#   Handle SNMP normal call
+#   Provide volume data
 # -------------------------------------------------------
-
-# normal case : read RPM and temperatures
 else
+
   # read SNMP MIB
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_VOL_SIZE} ${MIB_VOL_FREE})
 
@@ -155,6 +157,7 @@ else
 
   # publish level
   echo "vol.value ${PERCENT_USED}"
+
 fi
 
 # exit
