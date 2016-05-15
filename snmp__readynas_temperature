@@ -3,7 +3,7 @@
 # -------------------------------------------------------
 # Munin node script
 #
-# Monitor fan speed and internal temperature of a ReadyNAS 102
+# Monitor fan speed and internal temperature of a ReadyNAS
 # Retrieves temperature of CPU, hdd1 and hdd2
 #
 # Used in http://bernaerts.dyndns.org/nas/...
@@ -18,15 +18,16 @@
 
 =head1 NAME
 
-snmp__readynas102_temperature - Munin plugin to monitor fan speed and temperatures of ReadyNAS 102
+snmp__readynas_temperature - Munin plugin to monitor fan speed and temperatures of ReadyNAS
 
 =head1 APPLICABLE SYSTEMS
 
-Any ReadyNAS 102 with SNMP enabled
+Any ReadyNAS with SNMP enabled.
+Tested on ReadyNAS 102.
 
 =head1 CONFIGURATION
 
-ReadyNAS 102 must have SNMP enabled.
+ReadyNAS must have SNMP enabled.
 This plugin uses public community.
 
 =head1 INTERPRETATION
@@ -105,7 +106,7 @@ MIB_DISK2_STATE="READYNASOS-MIB::diskState.2"
 # -------------------------------------------------------
 
 # get nas name from script name
-NAS_IP=`basename $0 | cut -d'_' -f2`
+NAS_IP=$(basename $0 | cut -d'_' -f2)
 
 # -------------------------------------------------------
 # Handle SNMP autoconf call
