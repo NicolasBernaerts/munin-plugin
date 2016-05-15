@@ -1,0 +1,256 @@
+#!/bin/bash
+# -*- sh -*-
+# -------------------------------------------------------
+# Munin node script
+#
+# Monitor fan speed and internal temperature of a ReadyNAS
+# Retrieves temperature of CPU, hdd1 and hdd2
+#
+# Used in http://bernaerts.dyndns.org/nas/...
+#
+# Script name format should be :
+#   snmp_HostName_readynas-temperature
+#   snmp_HostName_PortNumber_readynas-temperature
+#
+# Parameters :
+#   $1 : none, "snmpconf" or "config"
+#
+# 09/05/2016, V1.0 - Creation by N. Bernaerts
+# -------------------------------------------------------
+
+: << =cut
+
+=head1 NAME
+
+snmp__readynas-temperature - Munin plugin to monitor fan speed and temperatures of ReadyNAS
+
+=head1 APPLICABLE SYSTEMS
+
+Any ReadyNAS with SNMP enabled.
+Tested on ReadyNAS 102.
+
+=head1 CONFIGURATION
+
+ReadyNAS must have SNMP enabled.
+This plugin uses public community.
+
+=head1 INTERPRETATION
+
+The temperature in degree celsius for CPU and hard disks.
+The fan rotation speed in RPM.
+
+=head1 MIB INFORMATION
+
+This plugin requires that ReadyNAS MIB has been previoulsy declared on the server.
+This can be done with following command :
+# wget --no-check-certificate -O /usr/share/snmp/mibs/READYNASOS-MIB.txt https://YourNASIP/READYNASOS-MIB.txt
+
+=head1 MAGIC MARKERS
+
+  #%# family=snmpauto
+  #%# capabilities=snmpconf
+
+=head1 VERSION
+
+  $Id$
+
+=head1 BUGS
+
+None known.
+
+=head1 AUTHOR
+
+Copyright (C) 2016 Nicolas Bernaerts
+
+=head1 LICENSE
+
+GPLv2.
+
+=cut
+
+
+# -------------------------------------------------------
+# Parameters
+# -------------------------------------------------------
+
+# first disk
+INDEX=1
+
+# display range
+DISPLAY_MIN=0
+DISPLAY_MAX=90
+
+# fan range
+FAN_MAX=25
+
+# define warning and critical temperature levels
+CPU_WARNING=70
+CPU_CRITICAL=80
+DISK_WARNING=45
+DISK_CRITICAL=50
+
+# -------------------------------------------------------
+# Configure all MIBs adresses
+# -------------------------------------------------------
+
+# FAN MIB
+MIB_FAN_RPM="READYNASOS-MIB::fanRPM.1"
+MIB_FAN_STATE="READYNASOS-MIB::fanStatus.1"
+
+# CPU MIB
+MIB_CPU_TEMP="READYNASOS-MIB::temperatureValue.1"
+
+# Disk generic MIB
+MIB_DISK_STATE="READYNASOS-MIB::diskState"
+MIB_DISK_MODEL="READYNASOS-MIB::diskModel"
+MIB_DISK_SERIAL="READYNASOS-MIB::diskSerial"
+MIB_DISK_CAPA="READYNASOS-MIB::diskCapacity"
+MIB_DISK_TEMP="READYNASOS-MIB::diskTemperature"
+
+# -------------------------------------------------------
+# Get NAS address and port
+# -------------------------------------------------------
+
+# get NAS hostname and port from script name
+NAS_HOST=$(basename $0 | cut -d'_' -f2)
+NAS_PORT=$(( $(basename $0 | cut -d'_' -f3) ))
+
+# set IP according to hostname and port
+[ "${NAS_PORT}" = "0" ] && NAS_IP="${NAS_HOST}" || NAS_IP="${NAS_HOST}:${NAS_PORT}"
+
+# -------------------------------------------------------
+#   Handle SNMP snmpconf call
+#   Announce required MIBs
+# -------------------------------------------------------
+if [ "$1" = "snmpconf" ];
+then
+
+  # FAN and CPU
+  echo "require ${MIB_FAN_RPM}"
+  echo "require ${MIB_FAN_STATE}"
+  echo "require ${MIB_CPU_TEMP}"
+
+  # New MIB of first disk
+  echo "require ${MIB_DISK_STATE}.${INDEX}"
+  echo "require ${MIB_DISK_MODEL}.${INDEX}"
+  echo "require ${MIB_DISK_SERIAL}.${INDEX}"
+  echo "require ${MIB_DISK_CAPA}.${INDEX}"
+  echo "require ${MIB_DISK_TEMP}.${INDEX}"
+
+# -------------------------------------------------------
+#   Handle SNMP config call
+#   Publish plugin configuration
+# -------------------------------------------------------
+elif [ "$1" = "config" ];
+then
+
+  # NAS general infos
+  echo "host_name ${NAS_HOST}"
+  echo "graph_title Temperature & Fan speed (${NAS_HOST})"
+  echo "graph_vlabel Degree Celsius"
+  echo "graph_category temperature"
+  echo "graph_info Temperature Levels & Fan speed"
+  echo "graph_args --lower-limit ${DISPLAY_MIN} --upper-limit ${DISPLAY_MAX} --rigid"
+
+  # read FAN state
+  MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_FAN_STATE})
+  FAN_STATE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_FAN_STATE}'[^"]*"\([^"]*\)".*$/\1/g' | tr '[:upper:]' '[:lower:]')
+
+  # fan speed
+  echo "fan.label Fan (${FAN_STATE})"
+  echo "fan.colour c0c0c0"
+  echo "fan.info Fan speed in RPM (/40)"
+  echo "fan.draw AREA"
+
+  # CPU temperature
+  echo "cpu.label CPU"
+  echo "cpu.colour 00ff00"
+  echo "cpu.info CPU tempterature"
+  echo "cpu.warning :${CPU_WARNING}"
+  echo "cpu.critical :${CPU_CRITICAL}"
+
+  # loop thru available disks
+  while [ "${INDEX}" != "" ];
+  do
+    # read disk MIB and collect state
+    MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} "${MIB_DISK_STATE}.${INDEX}" 2>/dev/null)
+    DISK_STATE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_DISK_STATE}'.'${INDEX}'[^"]*"\([^"]*\)".*$/\1/g' | tr '[:upper:]' '[:lower:]')
+
+    # if disk exists, display data
+    if [ "${DISK_STATE}" != "" ];
+    then
+      # collect data from result
+      MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} "${MIB_DISK_CAPA}.${INDEX}" "${MIB_DISK_MODEL}.${INDEX}" "${MIB_DISK_SERIAL}.${INDEX}")
+      DISK_MODEL=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_DISK_MODEL}'.'${INDEX}'[^"]*"\([^"]*\)".*$/\1/g')
+      DISK_SERIAL=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_DISK_SERIAL}'.'${INDEX}'[^"]*"\([^"]*\)".*$/\1/g')
+      DISK_CAPA=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_DISK_CAPA}'.'${INDEX}'[^"]*"\([^"]*\)".*$/\1/g')
+
+      # convert capacity in Gb
+      DISK_CAPA=$((DISK_CAPA/1073741824))
+
+      # disk temperature
+      echo "disk${INDEX}.label Disk ${INDEX} (${DISK_STATE})"
+      echo "disk${INDEX}.colour 0000ff"
+      echo "disk${INDEX}.info ${DISK_CAPA} Gb, model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
+      echo "disk${INDEX}.warning :${DISK_WARNING}"
+      echo "disk${INDEX}.critical :${DISK_CRITICAL}"
+
+      # increment to next disk
+      INDEX=$((INDEX+1))
+
+    # else, no disk present, end of loop
+    else
+      INDEX=""
+
+    fi
+  done
+
+# -------------------------------------------------------
+#   Handle SNMP normal call
+#   Provide RPM and temperatures
+# -------------------------------------------------------
+else
+
+  # read FAN and CPU SNMP MIB and collect values from result
+  MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_FAN_RPM} ${MIB_CPU_TEMP})
+  FAN_RPM=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_FAN_RPM}'[^0-9]*\([0-9]*\).*$/\1/g')
+  CPU_TEMP=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_CPU_TEMP}'[^0-9]*\([0-9]*\).*$/\1/g')
+
+  # convert RMP (1000 -> 25)
+  FAN_RPM=$((FAN_RPM/40))
+
+  # publish levels
+  echo "fan.value ${FAN_RPM}"
+  echo "cpu.value ${CPU_TEMP}"
+
+  # loop thru available disks
+  while [ "${INDEX}" != "" ];
+  do
+    # read disk MIB and collect state
+    MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} "${MIB_DISK_STATE}.${INDEX}" 2>/dev/null)
+    DISK_STATE=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_DISK_STATE}'.'${INDEX}'[^"]*"\([^"]*\)".*$/\1/g' | tr '[:upper:]' '[:lower:]')
+
+    # if disk exists, display data
+    if [ "${DISK_STATE}" != "" ];
+    then
+      # collect temperature from result
+      MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} "${MIB_DISK_TEMP}.${INDEX}")
+      DISK_TEMP=$(echo ${MIB_RESULT} | sed 's/^.*'${MIB_DISK_TEMP}'.'${INDEX}'[^0-9]*\([0-9]*\).*$/\1/g')
+
+      # disk temperature
+      echo "disk${INDEX}.value ${DISK_TEMP}"
+
+      # increment to next disk
+      INDEX=$((INDEX+1))
+
+    # else, no disk present, end of loop
+    else
+      INDEX=""
+
+    fi
+  done
+
+fi
+
+# exit
+exit 0
