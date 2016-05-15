@@ -17,15 +17,16 @@
 
 =head1 NAME
 
-snmp__readynas102_df - Munin plugin to monitor disk volume usage of ReadyNAS 102
+snmp__readynas102_df - Munin plugin to monitor disk volume usage of ReadyNAS
 
 =head1 APPLICABLE SYSTEMS
 
-Any ReadyNAS 102 with SNMP enabled
+Any ReadyNAS with SNMP enabled.
+Tested on ReadyNAS 102.
 
 =head1 CONFIGURATION
 
-ReadyNAS 102 must have SNMP enabled.
+ReadyNAS must have SNMP enabled.
 This plugin uses public community.
 
 =head1 INTERPRETATION
@@ -86,7 +87,7 @@ MIB_VOL_FREE="READYNASOS-MIB::volumeFreeSpace.1"
 # -------------------------------------------------------
 
 # get nas name from script name
-NAS_IP=`basename $0 | cut -d'_' -f2`
+NAS_IP=$(basename $0 | cut -d'_' -f2)
 
 # -------------------------------------------------------
 # Handle SNMP autoconf call
