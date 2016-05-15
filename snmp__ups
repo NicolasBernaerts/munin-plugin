@@ -131,7 +131,7 @@ then
   echo "graph_title UPS ${UPS_MANUFACTURER} model ${UPS_MODEL}"
   echo "graph_category power"
   echo "graph_info This graph shows UPS battery charge and load"
-  echo "graph_args --upper-limit 100 -l 0 --rigid"
+  echo "graph_args -l 0"
 
   # battery capacity
   echo "capacity.info Battery ${UPS_BATTERY} of ${UPS_POWER} VA"
