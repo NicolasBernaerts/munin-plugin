@@ -7,6 +7,10 @@
 #
 # Used in http://bernaerts.dyndns.org/nas/...
 #
+# Script name format should be :
+#   snmp_HostName_readynas-df
+#   snmp_HostName_PortNumber_readynas-df
+#
 # Parameters :
 #   $1 : none, "snmpconf" or "config"
 #
@@ -17,7 +21,7 @@
 
 =head1 NAME
 
-snmp__readynas_df - Munin plugin to monitor disk volume usage of ReadyNAS
+snmp__readynas-df - Munin plugin to monitor disk volume usage of ReadyNAS
 
 =head1 APPLICABLE SYSTEMS
 
@@ -83,11 +87,15 @@ MIB_VOL_SIZE="READYNASOS-MIB::volumeSize.1"
 MIB_VOL_FREE="READYNASOS-MIB::volumeFreeSpace.1"
 
 # -------------------------------------------------------
-# Get NAS address
+# Get NAS address and port
 # -------------------------------------------------------
 
-# get nas name from script name
-NAS_IP=$(basename $0 | cut -d'_' -f2)
+# get NAS hostname and port from script name
+NAS_HOST=$(basename $0 | cut -d'_' -f2)
+NAS_PORT=$(( $(basename $0 | cut -d'_' -f3) ))
+
+# set IP according to hostname and port
+[ "${NAS_PORT}" = "0" ] && NAS_IP="${NAS_HOST}" || NAS_IP="${NAS_HOST}:${NAS_PORT}"
 
 # -------------------------------------------------------
 #   Handle SNMP snmpconf call
@@ -124,8 +132,8 @@ then
   VOL_FREE=$((VOL_FREE/1024))
 
   # NAS general infos
-  echo "host_name ${NAS_IP}"
-  echo "graph_title Volume size (${NAS_IP})"
+  echo "host_name ${NAS_HOST}"
+  echo "graph_title Volume size (${NAS_HOST})"
   echo "graph_vlabel Percentage"
   echo "graph_category system"
   echo "graph_info This graph shows the usage level of volume in %"
