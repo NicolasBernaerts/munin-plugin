@@ -3,7 +3,7 @@
 # -------------------------------------------------------
 # Munin node script
 #
-# Monitor disk volume usage of a ReadyNAS 102
+# Monitor disk volume usage of a ReadyNAS
 #
 # Used in http://bernaerts.dyndns.org/nas/...
 #
@@ -17,7 +17,7 @@
 
 =head1 NAME
 
-snmp__readynas102_df - Munin plugin to monitor disk volume usage of ReadyNAS
+snmp__readynas_df - Munin plugin to monitor disk volume usage of ReadyNAS
 
 =head1 APPLICABLE SYSTEMS
 
