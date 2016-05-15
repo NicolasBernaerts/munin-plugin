@@ -118,11 +118,11 @@ then
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_MANUFACTURER} ${MIB_MODEL} ${MIB_STATUS} ${MIB_POWER_NOMINAL} ${MIB_BATTERY_TYPE})
 
   # get values from result
-  UPS_MANUFACTURER=$(echo ${MIB_RESULT} | sed 's/^.*ups.mfr = STRING: \(.*\)$/\1/g')
-  UPS_MODEL=$(echo ${MIB_RESULT} | sed 's/^.*ups.model = STRING: \(.*\)$/\1/g')
-  UPS_STATUS=$(echo ${MIB_RESULT} | sed 's/^.*ups.status = STRING: \(.*\)$/\1/g')
-  UPS_POWER=$(echo ${MIB_RESULT} | sed 's/^.*ups.realpower.nominal = STRING: \(.*\)$/\1/g')
-  UPS_BATTERY=$(echo ${MIB_RESULT} | sed 's/^.*battery.type = STRING: \(.*\)$/\1/g')
+  UPS_MANUFACTURER=$(echo ${MIB_RESULT} | sed "s/^.*ups.mfr[^']*'\([^']*\).*$/\1/g")
+  UPS_MODEL=$(echo ${MIB_RESULT} | sed "s/^.*ups.model[^']*'\([^']*\).*$/\1/g")
+  UPS_STATUS=$(echo ${MIB_RESULT} | sed "s/^.*ups.status[^']*'\([^']*\).*$/\1/g")
+  UPS_POWER=$(echo ${MIB_RESULT} | sed "s/^.*ups.realpower.nominal[^']*'\([^']*\).*$/\1/g")
+  UPS_BATTERY=$(echo ${MIB_RESULT} | sed "s/^.*battery.type[^']*'\([^']*\).*$/\1/g")
 
   # get UPS connection hostname
   echo "host_name $NAS_HOST"
@@ -165,9 +165,9 @@ else
   MIB_RESULT=$(snmpget -v1 -c public ${NAS_IP} ${MIB_BATTERY_CHARGE} ${MIB_BATTERY_RUNTIME} ${MIB_POWER_LOAD})
 
   # get values from result
-  UPS_LOAD=$(echo ${MIB_RESULT} | sed 's/^.*ups.load = STRING: \(.*\)$/\1/g')
-  UPS_CHARGE=$(echo ${MIB_RESULT} | sed 's/^.*battery.charge = STRING: \(.*\)$/\1/g')
-  UPS_RUNTIME=$(($(echo ${MIB_RESULT} | sed 's/^.*battery.runtime = STRING: \(.*\)$/\1/g') / 60))
+  UPS_LOAD=$(echo ${MIB_RESULT} | sed "s/^.*ups.load[^']*'\([^']*\).*$/\1/g")
+  UPS_CHARGE=$(echo ${MIB_RESULT} | sed "s/^.*battery.charge[^']*'\([^']*\).*$/\1/g")
+  UPS_RUNTIME=$(echo ${MIB_RESULT} | sed "s/^.*battery.runtime[^']*'\([^']*\).*$/\1/g")
 
   # publish battery level and runtime
   echo "capacity.value ${UPS_CHARGE}"
