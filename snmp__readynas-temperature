@@ -190,7 +190,6 @@ then
 
       # disk temperature
       echo "disk${INDEX}.label Disk ${INDEX} (${DISK_STATE})"
-      echo "disk${INDEX}.colour 0000ff"
       echo "disk${INDEX}.info ${DISK_CAPA} Gb, model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
       echo "disk${INDEX}.warning :${DISK_WARNING}"
       echo "disk${INDEX}.critical :${DISK_CRITICAL}"
