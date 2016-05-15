@@ -7,6 +7,10 @@
 #
 # Used in http://bernaerts.dyndns.org/nas/...
 #
+# Script name format should be :
+#   snmp_HostName_uptime
+#   snmp_HostName_PortNumber_uptime
+#
 # Parameters :
 #   $1 : none, "snmpconf" or "config"
 #
@@ -68,11 +72,15 @@ GPLv2.
 MIB_UPTIME="1.3.6.1.2.1.1.3.0"
 
 # -------------------------------------------------------
-# Get NAS address
+# Get NAS address and port
 # -------------------------------------------------------
 
-# get nas name from script name
-NAS_IP=$(basename $0 | cut -d'_' -f2)
+# get NAS hostname and port from script name
+NAS_HOST=$(basename $0 | cut -d'_' -f2)
+NAS_PORT=$(( $(basename $0 | cut -d'_' -f3) ))
+
+# set IP according to hostname and port
+[ "${NAS_PORT}" = "0" ] && NAS_IP="${NAS_HOST}" || NAS_IP="${NAS_HOST}:${NAS_PORT}"
 
 # -------------------------------------------------------
 #   Handle SNMP snmpconf call
