@@ -99,7 +99,7 @@ elif [ "$1" = "config" ];
 then
 
   # get UPS connection hostname
-  echo "host_name ${NAS_IP}"
+  echo "host_name ${NAS_HOST}"
 
   # graph  description
   echo "graph_title Uptime"
