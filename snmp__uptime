@@ -108,7 +108,7 @@ then
   echo "graph_category system"
   echo "uptime.label uptime"
   echo "uptime.draw AREA"
-  echo "uptime.cdef uptime,864000,/"
+  echo "uptime.cdef uptime,8640000,/"
 
 # -------------------------------------------------------
 #   Handle SNMP normal call
