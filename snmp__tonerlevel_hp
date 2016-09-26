@@ -72,6 +72,11 @@ GPLv2.
 #  off : all toner levels on the same graph
 MULTIGRAPH="on"
 
+# set levels for warning in percent remaining
+# values as defined in http://munin-monitoring.org/wiki/fieldname.warning
+CRITICAL="5:100"
+WARNING="15:"
+
 # -------------------------------------------------------
 #  Configure all MIBs adresses
 # -------------------------------------------------------
@@ -179,6 +184,8 @@ elif [ "$1" = "config" ]; then
   echo "black-used.colour d0d0d0"
   echo "black-used.min 0"
   echo "black-used.max 100"
+  [ "$CRITICAL" ] && echo "black.critical $CRITICAL"
+  [ "$WARNING" ] && echo "black.warning $WARNING"
 
   # --------------------
   # Cyan cartridge
@@ -204,6 +211,8 @@ elif [ "$1" = "config" ]; then
   echo "cyan-used.colour d0ffff"
   echo "cyan-used.min 0"
   echo "cyan-used.max 100"
+  [ "$CRITICAL" ] && echo "cyan.critical $CRITICAL"
+  [ "$WARNING"  ] && echo "cyan.warning $WARNING"
 
   # --------------------
   # Magenta cartridge
@@ -229,6 +238,8 @@ elif [ "$1" = "config" ]; then
   echo "magenta-used.colour ffd0ff"
   echo "magenta-used.min 0"
   echo "magenta-used.max 100"
+  [ "$CRITICAL" ] && echo "magenta.critical $CRITICAL"
+  [ "$WARNING"  ] && echo "magenta.warning $WARNING"
 
   # --------------------
   # Yellow cartridge
@@ -254,6 +265,8 @@ elif [ "$1" = "config" ]; then
   echo "yellow-used.colour ffffa0"
   echo "yellow-used.min 0"
   echo "yellow-used.max 100"
+  [ "$CRITICAL" ] && echo "yellow.critical $CRITICAL"
+  [ "$WARNING"  ] && echo "yellow.warning $WARNING"
 
 # -------------------------------------------------------
 #  Handle data read call
