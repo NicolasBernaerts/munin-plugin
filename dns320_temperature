@@ -18,6 +18,7 @@
 # 28/04/2015, V1.0 - Creation by N. Bernaerts
 # 02/05/2015, V1.1 - Handle fan speed from user.log
 # 03/05/2015, V1.2 - Handle error where temperature case is read as 0
+# 03/05/2015, V1.3 - Do not check idle drive (thanks to John Kari)
 # ----------------------------------------------
 
 # -------------------------------------------------------
@@ -91,16 +92,25 @@ if [ "$1" = "config" ]; then
 
   for DISK in "${ARR_DISK[@]}"
   do
-    # get disk size (in Gb)
-    DISK_INFO="No disk"
-    DISK_SIZE=$(smartctl -i --device=marvell /dev/${DISK} | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
-
-    # if disk is present, get its full characteristics
-    if [ "${DISK_SIZE}" != "" ]
+    # init text
+    DISK_INFO="Idle"
+    
+    # check disk state
+    DISK_STATE=$(hdparm -C /dev/${DISK} | grep "state.*" | sed 's/.*[=:  ]//')
+    
+    # if disk is not idle
+    if [ "${DISK_STATE}" = "active/idle" ]
     then
-      DISK_MODEL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-      DISK_SERIAL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-      DISK_INFO="${DISK_SIZE} Gb, model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
+      # get disk capacity
+      DISK_SIZE=$(smartctl -i --device=marvell /dev/${DISK} | grep "^User Capacity" | sed 's/^.*:\([0-9 ,]*\)bytes.*$/\1/' | tr -d " ," | sed 's/\(.*\).\{9\}/\1/')
+
+      # if disk is present, get its full characteristics
+      if [ "${DISK_SIZE}" != "" ]
+      then
+        DISK_MODEL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+        DISK_SERIAL=$(smartctl -i --device=marvell /dev/${DISK} | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
+        DISK_INFO="${DISK_SIZE} Gb, model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
+      fi
     fi
 
     # display disk1 configuration
@@ -143,11 +153,18 @@ else
 
   for DISK in "${ARR_DISK[@]}"
   do
-    # read hard disk 1 temperature
-    TEMP_DISK=$(smartctl -A --device=marvell /dev/${DISK} | grep "^194.*" | sed 's/^.*- *\([0-9]*\).*$/\1/g')
+    # check disk state
+    DISK_STATE=$(hdparm -C /dev/${DISK} | grep "state.*" | sed 's/.*[=:  ]//')
 
-    # publish disk temperature
-    echo "${DISK}.value ${TEMP_DISK}"
+    # if disk is not idle
+    if [ "${DISK_STATE}" = "active/idle" ]
+    then
+      # read hard disk 1 temperature
+      TEMP_DISK=$(smartctl -A --device=marvell /dev/${DISK} | grep "^194.*" | sed 's/^.*- *\([0-9]*\).*$/\1/g')
+
+      # publish disk temperature
+      echo "${DISK}.value ${TEMP_DISK}"
+    fi
   done
-
+  
 fi
