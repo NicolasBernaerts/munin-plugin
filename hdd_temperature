@@ -70,7 +70,7 @@ TEMP_WARNING="40"
 # -------------------------------------------------------
 
 # load array all disks available on the system
-ARR_DISK=($(lsblk --nodeps --noheadings | cut -d' ' -f1))
+ARR_DISK=( $(lsblk --nodeps --noheadings | cut -d' ' -f1) )
 
 # -------------------------------------------------------
 #  Handle autoconf call
@@ -92,15 +92,18 @@ elif [ "$1" = "config" ]; then
 
   for DISK in "${ARR_DISK[@]}"
   do
-    # read disk data (size in Gb)
-    DISK_MODEL=$(smartctl -i -d auto /dev/$DISK | grep "^Device Model" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SERIAL=$(smartctl -i -d auto /dev/$DISK | grep "^Serial Number" | sed 's/^.*:[ ]*\(.*\)$/\1/')
-    DISK_SIZE=$(smartctl -i -d auto /dev/$DISK | grep "^User Capacity" | tr -d ' ' | sed 's/^.*:\([0-9]*\).\{9\}bytes.*$/\1/')
+    # read disk data
+    ARR_DATA=( $(smartctl -i -d auto /dev/${DISK} | tr -d ' ') )
+    
+    # extract data
+    DISK_MODEL=$(echo "${ARR_DATA[@]}" | sed 's|^.*DeviceModel:\([^ ]*\).*$|\1|')
+    DISK_SERIAL=$(echo "${ARR_DATA[@]}" | sed 's|^.*SerialNumber:\([^ ]*\).*$|\1|')
+    DISK_SIZE=$(echo "${ARR_DATA[@]}" | sed 's|^.*UserCapacity:\([0-9]*\).\{9\}bytes.*$|\1|')
 
     # display configuration
-    echo "$DISK.label $DISK"
-    echo "$DISK.info $DISK_SIZE Gb, Model $DISK_MODEL, s/n $DISK_SERIAL"
-    echo "$DISK.warning $TEMP_WARNING"
+    echo "${DISK}.label ${DISK}"
+    echo "${DISK}.info ${DISK_SIZE} Gb, Model ${DISK_MODEL}, s/n ${DISK_SERIAL}"
+    echo "${DISK}.warning ${TEMP_WARNING}"
   done
 
 # -------------------------------------------------------
@@ -111,10 +114,10 @@ else
   for DISK in "${ARR_DISK[@]}"
   do
     # read disk data
-    DISK_TEMP=$(smartctl -a -d auto /dev/$DISK | grep "^194" | tr -d ' ' | sed 's/^.*-\([0-9]*\).*$/\1/')
+    DISK_TEMP=$(smartctl -a -d auto /dev/${DISK} | grep "^194" | tr -d ' ' | sed 's/^.*-\([0-9]*\).*$/\1/')
 
     # display result
-    echo "$DISK.value $DISK_TEMP"
+    echo "${DISK}.value ${DISK_TEMP}"
   done
 fi
 
